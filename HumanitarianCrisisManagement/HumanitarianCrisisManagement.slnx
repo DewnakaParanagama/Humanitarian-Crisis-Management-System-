@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Humanitarian.API/Humanitarian.API.csproj" />
+  <Project Path="Humanitarian.Application/Humanitarian.Application.csproj" />
+  <Project Path="Humanitarian.Domain/Humanitarian.Domain.csproj" />
+  <Project Path="Humanitarian.Infrastructure/Humanitarian.Infrastructure.csproj" />
+</Solution>
