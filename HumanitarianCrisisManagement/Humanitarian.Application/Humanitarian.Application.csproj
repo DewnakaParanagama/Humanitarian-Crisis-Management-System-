@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Humanitarian.Domain\Humanitarian.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
