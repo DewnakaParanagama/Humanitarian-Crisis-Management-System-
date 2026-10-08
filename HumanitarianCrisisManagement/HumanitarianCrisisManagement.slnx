@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Humanitarian.API/Humanitarian.API.csproj" />
+  <Project Path="Humanitarian.Application/Humanitarian.Application.csproj" />
+  <Project Path="Humanitarian.Domain/Humanitarian.Domain.csproj" />
+  <Project Path="Humanitarian.Infrastructure/Humanitarian.Infrastructure.csproj" />
+  <Project Path="Humanitarian.Tests/Humanitarian.Tests.csproj" Id="ec6e067e-e522-42dd-81f3-c21565a1edb2" />
+</Solution>
