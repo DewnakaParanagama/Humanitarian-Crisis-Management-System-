@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Humanitarian.Application.Common.Interfaces;
 
 namespace Humanitarian.Infrastructure;
 
@@ -18,6 +19,8 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(connectionString));
+        services.AddScoped<IAppDbContext>(
+            provider => provider.GetRequiredService<AppDbContext>());
 
         return services;
     }
