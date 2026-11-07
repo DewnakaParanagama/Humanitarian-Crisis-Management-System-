@@ -1,0 +1,45 @@
+﻿using Humanitarian.Application.Features.Volunteers.DTOs;
+
+namespace Humanitarian.Application.Common.Interfaces;
+
+public interface IVolunteerService
+{
+    // Register volunteer
+    Task<VolunteerResponseDto> RegisterVolunteerAsync(
+        Guid userId,
+        CreateVolunteerDto request,
+        CancellationToken cancellationToken);
+
+    // Get all volunteers
+    Task<IReadOnlyList<VolunteerResponseDto>> GetAllVolunteersAsync(
+        CancellationToken cancellationToken);
+
+    // Update volunteer verification status
+    Task<VolunteerResponseDto> UpdateVolunteerStatusAsync(
+        Guid volunteerId,
+        UpdateVolunteerStatusDto request,
+        CancellationToken cancellationToken);
+
+    // Dispatch volunteer
+    Task DispatchVolunteerAsync(
+        Guid volunteerId,
+        DispatchVolunteerDto request,
+        CancellationToken cancellationToken);
+
+    // Get logged-in volunteer profile
+    Task<MyVolunteerProfileDto> GetMyProfileAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    // Get logged-in volunteer tasks
+    Task<IReadOnlyList<VolunteerTaskResponseDto>> GetMyTasksAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    // Update assigned task status
+    Task UpdateTaskStatusAsync(
+        Guid userId,
+        Guid taskId,
+        UpdateVolunteerTaskStatusDto request,
+        CancellationToken cancellationToken);
+}

@@ -83,6 +83,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                     Status = StatusCodes.Status500InternalServerError,
                     Title = "An unexpected error occurred",
                     Detail = "Something went wrong on the server. Please try again later."
+
                 };
                 break;
         }
