@@ -31,7 +31,7 @@ public class SheltersController : ControllerBase
 
         return Ok(shelters);
     }
-    [Authorize(Roles = "Coordinator,Admin")]
+    [Authorize(Roles = "Coordinator,Admin,ShelterAdmin")]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ShelterResponseDto>>> GetAllShelters(
     CancellationToken cancellationToken)
