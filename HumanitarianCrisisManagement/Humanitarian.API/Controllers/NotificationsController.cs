@@ -33,8 +33,8 @@ public class NotificationsController : ControllerBase
             .ToListAsync(cancellationToken);
     }
 
-    [HttpPut("{id:int}/read")]
-    public async Task<IActionResult> MarkAsRead(int id, CancellationToken cancellationToken)
+    [HttpPut("{id:guid}/read")]
+    public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken cancellationToken)
     {
         var notification = await _context.Notifications.FindAsync(new object[] { id }, cancellationToken);
         if (notification == null) return NotFound();
