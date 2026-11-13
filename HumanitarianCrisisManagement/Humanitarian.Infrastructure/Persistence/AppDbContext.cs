@@ -28,6 +28,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Donation> Donations => Set<Donation>();
 
+    public DbSet<Resource> Resources => Set<Resource>();
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
