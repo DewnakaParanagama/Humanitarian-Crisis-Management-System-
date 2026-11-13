@@ -1,5 +1,7 @@
 using Humanitarian.Application.Common.Interfaces;
 using Humanitarian.Application.Features.Notifications.DTOs;
+using Humanitarian.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,10 +35,43 @@ public class NotificationsController : ControllerBase
             .ToListAsync(cancellationToken);
     }
 
+    // POST: api/v1/notifications (Restricted to Admin and Coordinator roles)
+    [HttpPost]
+    [Authorize(Roles = "Admin,Coordinator")]
+    public async Task<ActionResult<NotificationResponseDto>> CreateNotification([FromBody] CreateNotificationDto dto, CancellationToken cancellationToken)
+    {
+        var notification = new Notification
+        {
+            Id = Guid.NewGuid(),
+            Title = dto.Title,
+            Message = dto.Message,
+            Type = dto.Type,
+            Timestamp = DateTime.UtcNow,
+            IsRead = false
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var response = new NotificationResponseDto
+        {
+            Id = notification.Id,
+            Title = notification.Title,
+            Message = notification.Message,
+            Type = notification.Type,
+            Timestamp = notification.Timestamp,
+            IsRead = notification.IsRead
+        };
+
+        return CreatedAtAction(nameof(GetNotifications), new { id = notification.Id }, response);
+    }
+
     [HttpPut("{id:guid}/read")]
     public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken cancellationToken)
     {
-        var notification = await _context.Notifications.FindAsync(new object[] { id }, cancellationToken);
+        var notification = await _context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
+            
         if (notification == null) return NotFound();
 
         notification.IsRead = true;
