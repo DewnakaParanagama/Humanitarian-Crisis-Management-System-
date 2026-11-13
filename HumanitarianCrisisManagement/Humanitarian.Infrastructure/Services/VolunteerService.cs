@@ -22,7 +22,9 @@ public class VolunteerService : IVolunteerService
         CancellationToken cancellationToken)
     {
         var user = await _context.Users
-            .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken);
+            .FirstOrDefaultAsync(
+                item => item.Id == userId,
+                cancellationToken);
 
         if (user == null)
             throw new KeyNotFoundException("User not found.");
@@ -32,7 +34,9 @@ public class VolunteerService : IVolunteerService
                 "Only citizens can register as volunteers.");
 
         var existingProfile = await _context.VolunteerProfiles
-            .AnyAsync(profile => profile.UserId == userId, cancellationToken);
+            .AnyAsync(
+                profile => profile.UserId == userId,
+                cancellationToken);
 
         if (existingProfile)
             throw new InvalidOperationException(
@@ -62,6 +66,76 @@ public class VolunteerService : IVolunteerService
             CurrentLocation = request.Location.Trim(),
             VerificationStatus = VolunteerVerificationStatus.Pending,
             TasksCompleted = 0
+        };
+
+        _context.VolunteerProfiles.Add(volunteer);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        volunteer.User = user;
+
+        return MapToResponse(volunteer);
+    }
+
+    // Apply to become a volunteer
+    public async Task<VolunteerResponseDto> ApplyVolunteerAsync(
+        Guid userId,
+        ApplyVolunteerDto request,
+        CancellationToken cancellationToken)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(
+                item => item.Id == userId,
+                cancellationToken);
+
+        if (user == null)
+            throw new KeyNotFoundException("User not found.");
+
+        if (user.Role != UserRole.Citizen)
+            throw new UnauthorizedAccessException(
+                "Only citizens can apply to become volunteers.");
+
+        var existingProfile = await _context.VolunteerProfiles
+            .AnyAsync(
+                profile => profile.UserId == userId,
+                cancellationToken);
+
+        if (existingProfile)
+            throw new InvalidOperationException(
+                "Volunteer application already exists.");
+
+        if (string.IsNullOrWhiteSpace(request.District))
+            throw new ArgumentException("District is required.");
+
+        if (string.IsNullOrWhiteSpace(request.Availability))
+            throw new ArgumentException("Availability is required.");
+
+        var volunteer = new VolunteerProfile
+        {
+            UserId = userId,
+
+            District = request.District.Trim(),
+
+            AvailabilityDetails = request.Availability.Trim(),
+
+            Availability = VolunteerAvailability.Offline,
+
+            Skills = request.Skills ?? new List<string>(),
+
+            Assets = request.Assets ?? new List<string>(),
+
+            Experience = string.IsNullOrWhiteSpace(request.Experience)
+                ? null
+                : request.Experience.Trim(),
+
+            VerificationStatus = VolunteerVerificationStatus.Pending,
+
+            TasksCompleted = 0,
+
+            HasVehicle = request.Assets?.Any(
+                asset => asset.Contains(
+                    "vehicle",
+                    StringComparison.OrdinalIgnoreCase)) == true
         };
 
         _context.VolunteerProfiles.Add(volunteer);
@@ -113,7 +187,21 @@ public class VolunteerService : IVolunteerService
                 "Invalid volunteer verification status.");
         }
 
+        // Update volunteer verification status
         volunteer.VerificationStatus = newStatus;
+
+        // Upgrade Citizen account to Volunteer role
+        if (newStatus == VolunteerVerificationStatus.Verified)
+        {
+            if (volunteer.User == null)
+                throw new InvalidOperationException(
+                    "Volunteer user account not found.");
+
+            if (volunteer.User.Role == UserRole.Citizen)
+            {
+                volunteer.User.Role = UserRole.Volunteer;
+            }
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -158,7 +246,9 @@ public class VolunteerService : IVolunteerService
                 StringComparison.OrdinalIgnoreCase))
         {
             var targetExists = await _context.AssistanceRequests
-                .AnyAsync(item => item.Id == request.TargetId, cancellationToken);
+                .AnyAsync(
+                    item => item.Id == request.TargetId,
+                    cancellationToken);
 
             if (!targetExists)
                 throw new KeyNotFoundException(
@@ -170,7 +260,9 @@ public class VolunteerService : IVolunteerService
                      StringComparison.OrdinalIgnoreCase))
         {
             var targetExists = await _context.Shelters
-                .AnyAsync(item => item.Id == request.TargetId, cancellationToken);
+                .AnyAsync(
+                    item => item.Id == request.TargetId,
+                    cancellationToken);
 
             if (!targetExists)
                 throw new KeyNotFoundException("Shelter not found.");
@@ -182,7 +274,7 @@ public class VolunteerService : IVolunteerService
         }
 
         var assignment = new VolunteerAssignment
-        {  
+        {
             VolunteerProfileId = volunteerId,
             TargetId = request.TargetId,
             TargetType = targetType!,

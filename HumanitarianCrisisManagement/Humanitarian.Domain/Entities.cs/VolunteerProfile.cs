@@ -13,6 +13,11 @@ public class VolunteerProfile : BaseEntity
 
     public string AvailabilityDetails { get; set; } = string.Empty;
 
+    public string District { get; set; } = string.Empty;
+
+    public List<string> Assets { get; set; } = new();
+
+    public string? Experience { get; set; }
     public bool HasVehicle { get; set; }
 
     public string? VehicleType { get; set; }

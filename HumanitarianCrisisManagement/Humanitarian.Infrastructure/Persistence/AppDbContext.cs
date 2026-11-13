@@ -31,6 +31,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<Resource> Resources => Set<Resource>(); // <-- Added here
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

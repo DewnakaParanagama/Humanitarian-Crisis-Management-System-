@@ -24,6 +24,8 @@ public interface IAppDbContext
 
     DbSet<Notification> Notifications { get; }
 
+    DbSet<Resource> Resources { get; } // <-- Added back here
+
     DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(

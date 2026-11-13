@@ -10,6 +10,12 @@ public interface IVolunteerService
         CreateVolunteerDto request,
         CancellationToken cancellationToken);
 
+    // Apply to become a volunteer
+    Task<VolunteerResponseDto> ApplyVolunteerAsync(
+        Guid userId,
+        ApplyVolunteerDto request,
+        CancellationToken cancellationToken);
+
     // Get all volunteers
     Task<IReadOnlyList<VolunteerResponseDto>> GetAllVolunteersAsync(
         CancellationToken cancellationToken);

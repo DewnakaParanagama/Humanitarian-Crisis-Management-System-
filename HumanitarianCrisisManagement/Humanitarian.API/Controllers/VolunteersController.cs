@@ -38,7 +38,27 @@ public class VolunteersController : ControllerBase
             nameof(GetAllVolunteers),
             volunteer);
     }
+    // Citizen applies to become a volunteer
+    [Authorize(Roles = "Citizen")]
+    [HttpPost("apply")]
+    public async Task<ActionResult<VolunteerResponseDto>> ApplyVolunteer(
+        [FromBody] ApplyVolunteerDto request,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Unauthorized("Invalid user ID in token.");
+
+        var volunteer = await _volunteerService.ApplyVolunteerAsync(
+            userId,
+            request,
+            cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetMyProfile),
+            volunteer);
+    }
     // Coordinator and Admin view all volunteers
     [Authorize(Roles = "Coordinator,Admin")]
     [HttpGet]
@@ -87,7 +107,7 @@ public class VolunteersController : ControllerBase
     }
 
     // Get logged-in volunteer profile
-    [Authorize(Roles = "Citizen,Admin")]
+    [Authorize(Roles = "Citizen,Volunteer,Admin")]
     [HttpGet("me")]
     public async Task<ActionResult<MyVolunteerProfileDto>> GetMyProfile(
         CancellationToken cancellationToken)
@@ -105,7 +125,7 @@ public class VolunteersController : ControllerBase
     }
 
     // Get logged-in volunteer's assigned tasks
-    [Authorize(Roles = "Citizen,Admin")]
+    [Authorize(Roles = "Citizen,Volunteer,Admin")]
     [HttpGet("me/tasks")]
     public async Task<ActionResult<IReadOnlyList<VolunteerTaskResponseDto>>> GetMyTasks(
         CancellationToken cancellationToken)
@@ -123,7 +143,7 @@ public class VolunteersController : ControllerBase
     }
 
     // Update logged-in volunteer's task status
-    [Authorize(Roles = "Citizen,Admin")]
+    [Authorize(Roles = "Citizen,Volunteer,Admin")]
     [HttpPut("tasks/{taskId:guid}/status")]
     public async Task<IActionResult> UpdateTaskStatus(
         Guid taskId,

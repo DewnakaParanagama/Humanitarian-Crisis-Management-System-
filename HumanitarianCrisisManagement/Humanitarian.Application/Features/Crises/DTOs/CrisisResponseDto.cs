@@ -15,4 +15,8 @@ public class CrisisResponseDto
     public int AffectedCount { get; set; }
 
     public int RequestsCount { get; set; }
+
+    public float Latitude { get; set; }
+
+    public float Longitude { get; set; }
 }

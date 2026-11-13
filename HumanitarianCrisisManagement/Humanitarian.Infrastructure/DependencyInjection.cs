@@ -4,7 +4,7 @@ using Humanitarian.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using Humanitarian.Application.Interfaces;
 
 namespace Humanitarian.Infrastructure;
 
@@ -43,8 +43,11 @@ public static class DependencyInjection
         services.AddScoped<IVolunteerService, VolunteerService>();
 
         services.AddScoped<ICrisisService, CrisisService>();
+        
+        services.AddScoped<IResourceService, ResourceService>();
 
         services.AddHttpClient<IAIAnalysisService, GeminiAIAnalysisService>();
+
 
 
         return services;
