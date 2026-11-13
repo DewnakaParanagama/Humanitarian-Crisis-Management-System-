@@ -62,4 +62,29 @@ public class RequestsController : ControllerBase
 
         return Ok(requests);
     }
+
+    [HttpGet("/api/v1/citizen/requests/{requestId:guid}/volunteer")]
+    public async Task<IActionResult> GetAssignedVolunteer(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdValue, out var citizenId))
+        {
+            return Unauthorized();
+        }
+
+        var volunteerDetails = await _requestService.GetAssignedVolunteerForRequestAsync(
+            citizenId,
+            requestId,
+            cancellationToken);
+
+        if (volunteerDetails == null)
+        {
+            return NotFound(new { message = "No volunteer assigned to this request or request not found." });
+        }
+
+        return Ok(volunteerDetails);
+    }
 }

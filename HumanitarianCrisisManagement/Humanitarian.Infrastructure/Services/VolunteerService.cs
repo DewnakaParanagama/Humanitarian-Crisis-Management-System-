@@ -475,4 +475,25 @@ public class VolunteerService : IVolunteerService
             TasksCompleted = volunteer.TasksCompleted
         };
     }
+
+   public async Task<IReadOnlyList<ActiveCitizenDto>> GetActiveAssignedCitizensAsync(
+    Guid userId,
+    CancellationToken cancellationToken)
+{
+    return await _context.AssistanceRequests
+        .Include(r => r.Citizen)
+        .Where(r => r.AssignedVolunteerId == userId &&
+                    r.Status != RequestStatus.Delivered)
+        .Select(r => new ActiveCitizenDto
+        {
+            RequestId = r.Id,
+            CitizenId = r.CitizenId,
+            CitizenName = r.Citizen != null ? r.Citizen.FullName : "Unknown Citizen",
+            ContactInfo = r.Citizen != null ? (r.Citizen.PhoneNumber ?? r.Citizen.Email ?? "N/A") : "N/A",
+            ExactDistressLocation = r.Location,
+            EmergencyCategory = r.Category.ToString(),
+            Status = r.Status.ToString()
+        })
+        .ToListAsync(cancellationToken);
+}
 }

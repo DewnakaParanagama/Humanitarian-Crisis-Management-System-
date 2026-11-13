@@ -48,4 +48,9 @@ public interface IVolunteerService
         Guid taskId,
         UpdateVolunteerTaskStatusDto request,
         CancellationToken cancellationToken);
+
+    // Get citizens currently assigned to the logged-in volunteer
+    Task<IReadOnlyList<ActiveCitizenDto>> GetActiveAssignedCitizensAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
 }
