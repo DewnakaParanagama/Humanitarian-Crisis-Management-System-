@@ -20,6 +20,8 @@ public interface IAppDbContext
 
     DbSet<Donation> Donations { get; }
 
+    DbSet<Resource> Resources { get; }
+
     DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(

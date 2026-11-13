@@ -61,6 +61,14 @@ public class GlobalExceptionHandler : IExceptionHandler
                     Detail = exception.Message
                 };
                 break;
+            case InvalidOperationException:
+                problem = new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Bad request",
+                    Detail = exception.Message
+                };
+                break;
 
             case BusinessRuleException:
                 problem = new ProblemDetails

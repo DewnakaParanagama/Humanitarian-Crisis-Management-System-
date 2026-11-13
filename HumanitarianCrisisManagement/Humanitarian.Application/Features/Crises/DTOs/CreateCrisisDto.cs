@@ -13,4 +13,8 @@ public class CreateCrisisDto
     public string? Description { get; set; }
 
     public int AffectedCount { get; set; }
+
+    public float Latitude { get; set; }
+
+    public float Longitude { get; set; }
 }

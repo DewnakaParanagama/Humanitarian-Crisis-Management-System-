@@ -28,6 +28,8 @@ public class CrisisService : ICrisisService
                 Status = crisis.Status.ToString(),
                 Location = crisis.Location,
                 AffectedCount = crisis.AffectedPopulation,
+                Latitude = crisis.Latitude,
+                Longitude = crisis.Longitude,
 
                 RequestsCount = _context.AssistanceRequests
                     .Count(request => request.CrisisId == crisis.Id)
@@ -58,6 +60,12 @@ public class CrisisService : ICrisisService
         if (request.AffectedCount < 0)
             throw new ArgumentException("Affected count cannot be negative.");
 
+        if (request.Latitude < -90 || request.Latitude > 90)
+            throw new ArgumentException("Invalid latitude.");
+
+        if (request.Longitude < -180 || request.Longitude > 180)
+            throw new ArgumentException("Invalid longitude.");
+
         var crisis = new Crisis
         {
             Name = request.Title.Trim(),
@@ -66,6 +74,8 @@ public class CrisisService : ICrisisService
             Severity = CrisisSeverity.Medium,
             Location = request.Location.Trim(),
             AffectedPopulation = request.AffectedCount,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             StartDateUtc = DateTime.UtcNow
         };
 
@@ -81,6 +91,8 @@ public class CrisisService : ICrisisService
             Status = crisis.Status.ToString(),
             Location = crisis.Location,
             AffectedCount = crisis.AffectedPopulation,
+            Latitude = crisis.Latitude,
+            Longitude = crisis.Longitude,
             RequestsCount = 0
         };
     }

@@ -6,8 +6,7 @@ public class Crisis : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
 
-
-public CrisisType Type { get; set; }
+    public CrisisType Type { get; set; }
 
     public CrisisSeverity Severity { get; set; }
 
@@ -21,5 +20,7 @@ public CrisisType Type { get; set; }
 
     public DateTime? ResolvedDateUtc { get; set; }
 
+    public float Latitude { get; set; }
 
+    public float Longitude { get; set; }
 }
