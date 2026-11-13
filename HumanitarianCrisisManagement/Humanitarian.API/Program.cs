@@ -1,16 +1,20 @@
 
-using Humanitarian.Application;
-using Humanitarian.Infrastructure;
-using Humanitarian.API.Middleware;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Security.Claims;
+using Humanitarian.API.Middleware;
+using Humanitarian.API.Services;
+using Humanitarian.Application;
+using Humanitarian.Application.Common.Interfaces;
+using Humanitarian.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Register Application and Infrastructure services
 builder.Services.AddApplication();
@@ -120,6 +124,9 @@ builder.Services.AddCors(options =>
 // OpenAPI Configuration
 builder.Services.AddOpenApi();
 
+// Add SignalR Service
+builder.Services.AddSignalR();
+
 // Build Application
 var app = builder.Build();
 
@@ -147,6 +154,9 @@ app.UseAuthorization();
 
 // Map Controllers
 app.MapControllers();
+
+// Map SignalR Hub
+app.MapHub<Humanitarian.API.Hubs.NotificationHub>("/hubs/notifications");
 
 // Run Application
 app.Run();

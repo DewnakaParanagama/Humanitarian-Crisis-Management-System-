@@ -48,4 +48,14 @@ public interface IVolunteerService
         Guid taskId,
         UpdateVolunteerTaskStatusDto request,
         CancellationToken cancellationToken);
+
+    // Update live location
+    Task UpdateLiveLocationAsync(
+        Guid userId, UpdateVolunteerLocationDto request, CancellationToken cancellationToken
+        );
+
+    // Get all active volunteer locations for the map
+    Task<IReadOnlyList<ActiveVolunteerLocationDto>> GetActiveLocationsAsync(
+        CancellationToken cancellationToken
+        );
 }

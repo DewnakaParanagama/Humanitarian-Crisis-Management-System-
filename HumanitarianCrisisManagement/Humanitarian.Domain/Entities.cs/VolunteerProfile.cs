@@ -30,4 +30,8 @@ public class VolunteerProfile : BaseEntity
     public string? CurrentLocation { get; set; }
 
     public ApplicationUser? User { get; set; }
+
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public DateTime? LocationLastUpdatedUtc { get; set; }
 }
