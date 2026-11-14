@@ -24,9 +24,11 @@ public interface IAppDbContext
 
     DbSet<Notification> Notifications { get; }
 
-    DbSet<Resource> Resources { get; } // <-- Added back here
+    DbSet<Resource> Resources { get; }
 
     DbSet<AuditLog> AuditLogs { get; }
+
+    DbSet<DirectMessage> DirectMessages { get; }
 
     Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default);

@@ -91,6 +91,9 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("AssignedOrganizationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AssignedVolunteerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
@@ -126,6 +129,8 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedVolunteerId");
 
                     b.HasIndex("CitizenId");
 
@@ -276,6 +281,42 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Crises", (string)null);
+                });
+
+            modelBuilder.Entity("Humanitarian.Domain.Entities.DirectMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MessageBody")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("DirectMessages");
                 });
 
             modelBuilder.Entity("Humanitarian.Domain.Entities.Donation", b =>
@@ -577,6 +618,10 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Humanitarian.Domain.Entities.AssistanceRequest", b =>
                 {
+                    b.HasOne("Humanitarian.Domain.Entities.ApplicationUser", "AssignedVolunteer")
+                        .WithMany()
+                        .HasForeignKey("AssignedVolunteerId");
+
                     b.HasOne("Humanitarian.Domain.Entities.ApplicationUser", "Citizen")
                         .WithMany()
                         .HasForeignKey("CitizenId")
@@ -587,6 +632,8 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("CrisisId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AssignedVolunteer");
 
                     b.Navigation("Citizen");
 
@@ -603,6 +650,16 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Humanitarian.Domain.Entities.DirectMessage", b =>
+            {
+                b.HasOne("Humanitarian.Domain.Entities.AssistanceRequest", "Request")
+                    .WithMany()
+                    .HasForeignKey("RequestId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Request");
+            });
             modelBuilder.Entity("Humanitarian.Domain.Entities.Donation", b =>
                 {
                     b.HasOne("Humanitarian.Domain.Entities.Campaign", "Campaign")

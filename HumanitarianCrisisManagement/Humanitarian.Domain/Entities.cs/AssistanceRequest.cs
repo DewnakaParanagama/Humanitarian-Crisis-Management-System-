@@ -6,7 +6,7 @@ public class AssistanceRequest : BaseEntity
 {
     public Guid CitizenId { get; set; }
 
-public Guid? CrisisId { get; set; }
+    public Guid? CrisisId { get; set; }
 
     public RequestCategory Category { get; set; }
 
@@ -22,6 +22,9 @@ public Guid? CrisisId { get; set; }
 
     public Guid? AssignedOrganizationId { get; set; }
 
+    // Newly added to link a specific volunteer to this request
+    public Guid? AssignedVolunteerId { get; set; }
+
     public string? AIRecommendation { get; set; }
 
     public decimal? AIConfidenceScore { get; set; }
@@ -30,7 +33,8 @@ public Guid? CrisisId { get; set; }
 
     public ApplicationUser? Citizen { get; set; }
 
+    // Navigation property for the assigned volunteer
+    public ApplicationUser? AssignedVolunteer { get; set; }
+
     public Crisis? Crisis { get; set; }
-
-
 }

@@ -30,10 +30,11 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Campaign> Campaigns => Set<Campaign>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
-
-    public DbSet<Resource> Resources => Set<Resource>(); // <-- Added here
+    public DbSet<Resource> Resources => Set<Resource>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public DbSet<DirectMessage> DirectMessages => Set<DirectMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
