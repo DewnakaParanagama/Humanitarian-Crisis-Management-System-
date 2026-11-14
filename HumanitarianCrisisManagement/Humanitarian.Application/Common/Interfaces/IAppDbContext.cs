@@ -24,7 +24,7 @@ public interface IAppDbContext
 
     DbSet<Notification> Notifications { get; }
 
-    DbSet<Resource> Resources { get; } 
+    DbSet<Resource> Resources { get; }
 
     DbSet<AuditLog> AuditLogs { get; }
 

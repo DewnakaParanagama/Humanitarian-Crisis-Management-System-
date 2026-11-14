@@ -651,16 +651,15 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Humanitarian.Domain.Entities.DirectMessage", b =>
-                {
-                    b.HasOne("Humanitarian.Domain.Entities.AssistanceRequest", "Request")
-                        .WithMany()
-                        .HasForeignKey("RequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("Humanitarian.Domain.Entities.AssistanceRequest", "Request")
+                    .WithMany()
+                    .HasForeignKey("RequestId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Request");
-                });
-
+                b.Navigation("Request");
+            });
             modelBuilder.Entity("Humanitarian.Domain.Entities.Donation", b =>
                 {
                     b.HasOne("Humanitarian.Domain.Entities.Campaign", "Campaign")
