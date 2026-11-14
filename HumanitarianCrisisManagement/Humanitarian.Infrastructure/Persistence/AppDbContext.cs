@@ -1,4 +1,3 @@
-
 using Humanitarian.Application.Common.Interfaces;
 using Humanitarian.Domain.Common;
 using Humanitarian.Domain.Entities;
@@ -28,7 +27,11 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Donation> Donations => Set<Donation>();
 
-    public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<Campaign> Campaigns => Set<Campaign>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Resource> Resources => Set<Resource>(); // <-- Added here
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

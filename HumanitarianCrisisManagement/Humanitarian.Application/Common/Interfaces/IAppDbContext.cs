@@ -20,7 +20,11 @@ public interface IAppDbContext
 
     DbSet<Donation> Donations { get; }
 
-    DbSet<Resource> Resources { get; }
+    DbSet<Campaign> Campaigns { get; }
+
+    DbSet<Notification> Notifications { get; }
+
+    DbSet<Resource> Resources { get; } // <-- Added back here
 
     DbSet<AuditLog> AuditLogs { get; }
 
@@ -28,5 +32,5 @@ public interface IAppDbContext
         CancellationToken cancellationToken = default);
 
     Task<IDbContextTransaction> BeginTransactionAsync(
-    CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default);
 }
