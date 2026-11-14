@@ -20,13 +20,19 @@ public interface IAppDbContext
 
     DbSet<Donation> Donations { get; }
 
+    DbSet<Campaign> Campaigns { get; }
+
+    DbSet<Notification> Notifications { get; }
+
     DbSet<Resource> Resources { get; }
 
     DbSet<AuditLog> AuditLogs { get; }
+
+    DbSet<DirectMessage> DirectMessages { get; }
 
     Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default);
 
     Task<IDbContextTransaction> BeginTransactionAsync(
-    CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default);
 }

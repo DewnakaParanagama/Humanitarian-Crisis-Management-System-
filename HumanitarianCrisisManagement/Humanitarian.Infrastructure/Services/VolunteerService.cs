@@ -114,25 +114,16 @@ public class VolunteerService : IVolunteerService
         var volunteer = new VolunteerProfile
         {
             UserId = userId,
-
             District = request.District.Trim(),
-
             AvailabilityDetails = request.Availability.Trim(),
-
             Availability = VolunteerAvailability.Offline,
-
             Skills = request.Skills ?? new List<string>(),
-
             Assets = request.Assets ?? new List<string>(),
-
             Experience = string.IsNullOrWhiteSpace(request.Experience)
                 ? null
                 : request.Experience.Trim(),
-
             VerificationStatus = VolunteerVerificationStatus.Pending,
-
             TasksCompleted = 0,
-
             HasVehicle = request.Assets?.Any(
                 asset => asset.Contains(
                     "vehicle",
@@ -188,7 +179,6 @@ public class VolunteerService : IVolunteerService
                 "Invalid volunteer verification status.");
         }
 
-        // Update volunteer verification status
         volunteer.VerificationStatus = newStatus;
 
         // Upgrade Citizen account to Volunteer role
@@ -246,26 +236,29 @@ public class VolunteerService : IVolunteerService
                 "AssistanceRequest",
                 StringComparison.OrdinalIgnoreCase))
         {
-            var targetExists = await _context.AssistanceRequests
-                .AnyAsync(
+            var assistanceRequest = await _context.AssistanceRequests
+                .FirstOrDefaultAsync(
                     item => item.Id == request.TargetId,
                     cancellationToken);
 
-            if (!targetExists)
+            if (assistanceRequest == null)
                 throw new KeyNotFoundException(
                     "Assistance request not found.");
+
+            // Link the volunteer user account to the assistance request
+            assistanceRequest.AssignedVolunteerId = volunteer.UserId;
         }
         else if (string.Equals(
                      targetType,
                      "Shelter",
                      StringComparison.OrdinalIgnoreCase))
         {
-            var targetExists = await _context.Shelters
+            var shelterExists = await _context.Shelters
                 .AnyAsync(
                     item => item.Id == request.TargetId,
                     cancellationToken);
 
-            if (!targetExists)
+            if (!shelterExists)
                 throw new KeyNotFoundException("Shelter not found.");
         }
         else
@@ -316,7 +309,7 @@ public class VolunteerService : IVolunteerService
         };
     }
 
-    // Get tasks assigned to logged-in volunteer
+    // Get logged-in volunteer's assigned tasks
     public async Task<IReadOnlyList<VolunteerTaskResponseDto>>
         GetMyTasksAsync(
             Guid userId,
@@ -435,13 +428,13 @@ public class VolunteerService : IVolunteerService
                     "This task has already been completed or is not assigned.");
             }
 
-            // 1. Mark task as completed
+            // Mark task as completed
             assignment.Status = "Completed";
 
-            // 2. Increment completed task count
+            // Increment completed task count
             volunteer.TasksCompleted++;
 
-            // 3. Make volunteer available again
+            // Make volunteer available again
             volunteer.Availability = VolunteerAvailability.Available;
             volunteer.VerificationStatus =
                 VolunteerVerificationStatus.Verified;
@@ -457,7 +450,7 @@ public class VolunteerService : IVolunteerService
         }
     }
 
-    // Map entity to response DTO
+    // Map entity to response
     private static VolunteerResponseDto MapToResponse(
         VolunteerProfile volunteer)
     {
@@ -478,10 +471,15 @@ public class VolunteerService : IVolunteerService
         };
     }
     // Update live location
-    public async Task UpdateLiveLocationAsync(Guid userId, UpdateVolunteerLocationDto request, CancellationToken cancellationToken)
+    public async Task UpdateLiveLocationAsync(
+        Guid userId,
+        UpdateVolunteerLocationDto request,
+        CancellationToken cancellationToken)
     {
         var volunteer = await _context.VolunteerProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(
+                p => p.UserId == userId,
+                cancellationToken);
 
         if (volunteer == null)
             throw new KeyNotFoundException("Volunteer profile not found.");
@@ -494,17 +492,17 @@ public class VolunteerService : IVolunteerService
     }
 
     // Get active locations for map
-    public async Task<IReadOnlyList<ActiveVolunteerLocationDto>> GetActiveLocationsAsync
-        (
-        CancellationToken cancellationToken
-        )
+    public async Task<IReadOnlyList<ActiveVolunteerLocationDto>>
+        GetActiveLocationsAsync(CancellationToken cancellationToken)
     {
         var activeVolunteers = await _context.VolunteerProfiles
             .AsNoTracking()
             .Include(p => p.User)
-            .Where(p => p.VerificationStatus == VolunteerVerificationStatus.Active
-                     && p.Latitude.HasValue
-                     && p.Longitude.HasValue)
+            .Where(p =>
+                p.VerificationStatus == VolunteerVerificationStatus.Active &&
+                p.Latitude.HasValue &&
+                p.Longitude.HasValue &&
+                p.LocationLastUpdatedUtc.HasValue)
             .ToListAsync(cancellationToken);
 
         return activeVolunteers.Select(v => new ActiveVolunteerLocationDto
@@ -515,5 +513,33 @@ public class VolunteerService : IVolunteerService
             Longitude = v.Longitude!.Value,
             LastUpdatedUtc = v.LocationLastUpdatedUtc!.Value
         }).ToList();
+    }
+
+    // Get citizens currently assigned to the logged-in volunteer
+    public async Task<IReadOnlyList<ActiveCitizenDto>>
+        GetActiveAssignedCitizensAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
+    {
+        return await _context.AssistanceRequests
+            .Include(r => r.Citizen)
+            .Where(r =>
+                r.AssignedVolunteerId == userId &&
+                r.Status != RequestStatus.Delivered)
+            .Select(r => new ActiveCitizenDto
+            {
+                RequestId = r.Id,
+                CitizenId = r.CitizenId,
+                CitizenName = r.Citizen != null
+                    ? r.Citizen.FullName
+                    : "Unknown Citizen",
+                ContactInfo = r.Citizen != null
+                    ? (r.Citizen.PhoneNumber ?? r.Citizen.Email ?? "N/A")
+                    : "N/A",
+                ExactDistressLocation = r.Location,
+                EmergencyCategory = r.Category.ToString(),
+                Status = r.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
     }
 }
