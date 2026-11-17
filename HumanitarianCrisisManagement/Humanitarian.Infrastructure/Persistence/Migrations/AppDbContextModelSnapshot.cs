@@ -588,6 +588,15 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Property<bool>("HasVehicle")
                         .HasColumnType("bit");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("LocationLastUpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
                     b.PrimitiveCollection<string>("Skills")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -651,15 +660,16 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Humanitarian.Domain.Entities.DirectMessage", b =>
-            {
-                b.HasOne("Humanitarian.Domain.Entities.AssistanceRequest", "Request")
-                    .WithMany()
-                    .HasForeignKey("RequestId")
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                {
+                    b.HasOne("Humanitarian.Domain.Entities.AssistanceRequest", "Request")
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                b.Navigation("Request");
-            });
+                    b.Navigation("Request");
+                });
+
             modelBuilder.Entity("Humanitarian.Domain.Entities.Donation", b =>
                 {
                     b.HasOne("Humanitarian.Domain.Entities.Campaign", "Campaign")

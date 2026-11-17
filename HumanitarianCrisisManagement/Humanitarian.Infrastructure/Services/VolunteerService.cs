@@ -4,6 +4,7 @@ using Humanitarian.Domain.Common;
 using Humanitarian.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace Humanitarian.Infrastructure.Services;
 
 public class VolunteerService : IVolunteerService
@@ -281,6 +282,7 @@ public class VolunteerService : IVolunteerService
         volunteer.VerificationStatus = VolunteerVerificationStatus.Active;
 
         await _context.SaveChangesAsync(cancellationToken);
+
     }
 
     // Get logged-in volunteer profile
@@ -468,15 +470,62 @@ public class VolunteerService : IVolunteerService
             TasksCompleted = volunteer.TasksCompleted
         };
     }
-
-    public async Task<IReadOnlyList<ActiveCitizenDto>> GetActiveAssignedCitizensAsync(
+    // Update live location
+    public async Task UpdateLiveLocationAsync(
         Guid userId,
+        UpdateVolunteerLocationDto request,
         CancellationToken cancellationToken)
+    {
+        var volunteer = await _context.VolunteerProfiles
+            .FirstOrDefaultAsync(
+                p => p.UserId == userId,
+                cancellationToken);
+
+        if (volunteer == null)
+            throw new KeyNotFoundException("Volunteer profile not found.");
+
+        volunteer.Latitude = request.Latitude;
+        volunteer.Longitude = request.Longitude;
+        volunteer.LocationLastUpdatedUtc = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // Get active locations for map
+    public async Task<IReadOnlyList<ActiveVolunteerLocationDto>>
+        GetActiveLocationsAsync(CancellationToken cancellationToken)
+    {
+        var activeVolunteers = await _context.VolunteerProfiles
+            .AsNoTracking()
+            .Include(p => p.User)
+            .Where(p =>
+                p.VerificationStatus == VolunteerVerificationStatus.Active &&
+                p.Latitude.HasValue &&
+                p.Longitude.HasValue &&
+                p.LocationLastUpdatedUtc.HasValue)
+            .ToListAsync(cancellationToken);
+
+        return activeVolunteers.Select(v => new ActiveVolunteerLocationDto
+        {
+            VolunteerId = v.Id,
+            FullName = v.User?.FullName ?? "Unknown Volunteer",
+            Latitude = v.Latitude!.Value,
+            Longitude = v.Longitude!.Value,
+            LastUpdatedUtc = v.LocationLastUpdatedUtc!.Value
+        }).ToList();
+    }
+
+    // Get citizens currently assigned to the logged-in volunteer
+    public async Task<IReadOnlyList<ActiveCitizenDto>>
+        GetActiveAssignedCitizensAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
     {
         return await _context.AssistanceRequests
             .Include(r => r.Citizen)
-            .Where(r => r.AssignedVolunteerId == userId &&
-                        r.Status != RequestStatus.Delivered)
+            .Where(r =>
+                r.AssignedVolunteerId == userId &&
+                r.Status != RequestStatus.Delivered)
             .Select(r => new ActiveCitizenDto
             {
                 RequestId = r.Id,

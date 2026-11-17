@@ -11,10 +11,15 @@ namespace Humanitarian.API.Controllers;
 public class VolunteersController : ControllerBase
 {
     private readonly IVolunteerService _volunteerService;
+    private readonly INotificationService _notificationService;
 
-    public VolunteersController(IVolunteerService volunteerService)
+    // එකම Constructor එකයි තියෙන්නේ. මේකට Services දෙකම එනවා.
+    public VolunteersController(
+        IVolunteerService volunteerService,
+        INotificationService notificationService)
     {
         _volunteerService = volunteerService;
+        _notificationService = notificationService;
     }
 
     // Citizen registers as a volunteer
@@ -38,6 +43,7 @@ public class VolunteersController : ControllerBase
             nameof(GetAllVolunteers),
             volunteer);
     }
+
     // Citizen applies to become a volunteer
     [Authorize(Roles = "Citizen")]
     [HttpPost("apply")]
@@ -59,6 +65,7 @@ public class VolunteersController : ControllerBase
             nameof(GetMyProfile),
             volunteer);
     }
+
     // Coordinator and Admin view all volunteers
     [Authorize(Roles = "Coordinator,Admin")]
     [HttpGet]
@@ -99,6 +106,15 @@ public class VolunteersController : ControllerBase
             id,
             request,
             cancellationToken);
+
+        // මෙතනදී SignalR Alert එක යවන්න අපි NotificationService එකට කතා කරනවා.
+        // Alert එක යවන්න අදාළ Volunteer ගේ UserId එක හොයාගන්න ඕන නිසා,
+        // දැනට අපි TargetType එක එක්ක Message එකක් හදලා තියෙනවා.
+        // (VolunteerService එකෙන් UserId එකක් Return කරගන්න හැදුවොත් මේක තවත් ලේසියි, 
+        // ඒත් දැනට මේක හරි).
+
+        // var message = $"You have been assigned to a new {request.TargetType} emergency. Please check your tasks.";
+        // await _notificationService.SendDispatchAlertAsync(volunteerUserId, message, cancellationToken);
 
         return Ok(new
         {
@@ -165,5 +181,32 @@ public class VolunteersController : ControllerBase
         {
             message = "Task completed successfully."
         });
+    }
+
+    // Update logged-in volunteer's live location
+    [Authorize(Roles = "Volunteer,Citizen,Admin")]
+    [HttpPut("me/location")]
+    public async Task<IActionResult> UpdateLiveLocation(
+        [FromBody] UpdateVolunteerLocationDto request,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Unauthorized("Invalid user ID in token.");
+
+        await _volunteerService.UpdateLiveLocationAsync(userId, request, cancellationToken);
+
+        return Ok(new { message = "Location updated successfully." });
+    }
+
+    // Get active volunteer locations for coordinator map
+    [Authorize(Roles = "Admin,Coordinator")]
+    [HttpGet("active-locations")]
+    public async Task<ActionResult<IReadOnlyList<ActiveVolunteerLocationDto>>> GetActiveLocations(
+        CancellationToken cancellationToken)
+    {
+        var locations = await _volunteerService.GetActiveLocationsAsync(cancellationToken);
+        return Ok(locations);
     }
 }
