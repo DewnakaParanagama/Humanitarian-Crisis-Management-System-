@@ -1,4 +1,5 @@
-﻿using Humanitarian.Application.Common.Interfaces;
+﻿
+using Humanitarian.Application.Common.Interfaces;
 using Humanitarian.Application.Features.Volunteers.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,6 @@ public class VolunteersController : ControllerBase
     private readonly IVolunteerService _volunteerService;
     private readonly INotificationService _notificationService;
 
-    // එකම Constructor එකයි තියෙන්නේ. මේකට Services දෙකම එනවා.
     public VolunteersController(
         IVolunteerService volunteerService,
         INotificationService notificationService)
@@ -107,15 +107,6 @@ public class VolunteersController : ControllerBase
             request,
             cancellationToken);
 
-        // මෙතනදී SignalR Alert එක යවන්න අපි NotificationService එකට කතා කරනවා.
-        // Alert එක යවන්න අදාළ Volunteer ගේ UserId එක හොයාගන්න ඕන නිසා,
-        // දැනට අපි TargetType එක එක්ක Message එකක් හදලා තියෙනවා.
-        // (VolunteerService එකෙන් UserId එකක් Return කරගන්න හැදුවොත් මේක තවත් ලේසියි, 
-        // ඒත් දැනට මේක හරි).
-
-        // var message = $"You have been assigned to a new {request.TargetType} emergency. Please check your tasks.";
-        // await _notificationService.SendDispatchAlertAsync(volunteerUserId, message, cancellationToken);
-
         return Ok(new
         {
             message = "Volunteer dispatched successfully."
@@ -195,7 +186,10 @@ public class VolunteersController : ControllerBase
         if (!Guid.TryParse(userIdValue, out var userId))
             return Unauthorized("Invalid user ID in token.");
 
-        await _volunteerService.UpdateLiveLocationAsync(userId, request, cancellationToken);
+        await _volunteerService.UpdateLiveLocationAsync(
+            userId,
+            request,
+            cancellationToken);
 
         return Ok(new { message = "Location updated successfully." });
     }
@@ -206,7 +200,45 @@ public class VolunteersController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ActiveVolunteerLocationDto>>> GetActiveLocations(
         CancellationToken cancellationToken)
     {
-        var locations = await _volunteerService.GetActiveLocationsAsync(cancellationToken);
+        var locations = await _volunteerService.GetActiveLocationsAsync(
+            cancellationToken);
+
         return Ok(locations);
+    }
+
+    // Get active assigned citizens for a specific volunteer
+    [Authorize(Roles = "Volunteer,Coordinator,Admin")]
+    [HttpGet("{volunteerId:guid}/active-citizens")]
+    public async Task<ActionResult<IReadOnlyList<ActiveCitizenDto>>> GetActiveAssignedCitizens(
+        Guid volunteerId,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+            return Unauthorized("Invalid user ID in token.");
+
+        // Only Coordinators and Admins can view any volunteer's citizens
+        var canViewAnyVolunteer =
+            User.IsInRole("Coordinator") || User.IsInRole("Admin");
+
+        try
+        {
+            var citizens = await _volunteerService.GetActiveAssignedCitizensAsync(
+                volunteerId,
+                currentUserId,
+                canViewAnyVolunteer,
+                cancellationToken);
+
+            return Ok(citizens);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 }
