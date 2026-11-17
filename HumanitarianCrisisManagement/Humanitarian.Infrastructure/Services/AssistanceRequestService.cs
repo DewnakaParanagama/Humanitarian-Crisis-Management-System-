@@ -104,4 +104,31 @@ public class AssistanceRequestService : IAssistanceRequestService
 
         return requests;
     }
+
+    public async Task<AssignedVolunteerDto?> GetAssignedVolunteerForRequestAsync(
+    Guid citizenId,
+    Guid requestId,
+    CancellationToken cancellationToken)
+{
+    var request = await _context.AssistanceRequests
+        .Include(r => r.AssignedVolunteer)
+        .FirstOrDefaultAsync(r => r.Id == requestId && r.CitizenId == citizenId, cancellationToken);
+
+    if (request == null || request.AssignedVolunteer == null)
+    {
+        return null;
+    }
+
+    var volunteer = request.AssignedVolunteer;
+
+    return new AssignedVolunteerDto
+    {
+        VolunteerId = volunteer.Id,
+        Name = volunteer.FullName,
+        PhoneNumber = volunteer.PhoneNumber ?? string.Empty,
+        Email = volunteer.Email ?? string.Empty,
+        Status = "En Route / Assigned",
+        Skills = "General Emergency Response"
+    };
+}
 }

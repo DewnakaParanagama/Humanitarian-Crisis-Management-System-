@@ -51,11 +51,16 @@ public interface IVolunteerService
 
     // Update live location
     Task UpdateLiveLocationAsync(
-        Guid userId, UpdateVolunteerLocationDto request, CancellationToken cancellationToken
-        );
+        Guid userId,
+        UpdateVolunteerLocationDto request,
+        CancellationToken cancellationToken);
 
-    // Get all active volunteer locations for the map
+    // Get active locations for map
     Task<IReadOnlyList<ActiveVolunteerLocationDto>> GetActiveLocationsAsync(
-        CancellationToken cancellationToken
-        );
+        CancellationToken cancellationToken);
+
+    // Get active assigned citizens by volunteer ID
+    Task<IReadOnlyList<ActiveCitizenDto>> GetActiveAssignedCitizensAsync(
+        Guid volunteerId,
+        CancellationToken cancellationToken);
 }

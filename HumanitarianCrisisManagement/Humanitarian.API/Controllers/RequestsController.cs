@@ -62,4 +62,60 @@ public class RequestsController : ControllerBase
 
         return Ok(requests);
     }
+
+    [HttpGet("/api/v1/citizen/requests/{requestId:guid}/volunteer")]
+    public async Task<IActionResult> GetAssignedVolunteer(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdValue, out var citizenId))
+        {
+            return Unauthorized();
+        }
+
+        var volunteerDetails = await _requestService.GetAssignedVolunteerForRequestAsync(
+            citizenId,
+            requestId,
+            cancellationToken);
+
+        if (volunteerDetails == null)
+        {
+            return NotFound(new { message = "No volunteer assigned to this request or request not found." });
+        }
+
+        return Ok(volunteerDetails);
+
+    }
+    // Vishwa ඉල්ලපු /api/v1/requests/{requestId}/responder Endpoint එක
+    [HttpGet("{requestId:guid}/responder")]
+    public async Task<IActionResult> GetAssignedResponder(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdValue, out var citizenId))
+        {
+            return Unauthorized();
+        }
+
+        // දැනටමත් තියෙන Service method එකම පාවිච්චි කරනවා
+        var volunteerDetails = await _requestService.GetAssignedVolunteerForRequestAsync(
+            citizenId,
+            requestId,
+            cancellationToken);
+
+        if (volunteerDetails == null)
+        {
+            return NotFound(new { message = "No responder assigned to this request or request not found." });
+        }
+
+        return Ok(volunteerDetails);
+
+    }
+
+
 }

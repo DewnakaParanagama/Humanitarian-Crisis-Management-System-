@@ -12,4 +12,9 @@ public interface IAssistanceRequestService
     Task<IReadOnlyList<MyAssistanceRequestResponse>> GetMyRequestsAsync(
     Guid citizenId,
     CancellationToken cancellationToken);
+
+    Task<AssignedVolunteerDto?> GetAssignedVolunteerForRequestAsync(
+    Guid citizenId,
+    Guid requestId,
+    CancellationToken cancellationToken);
 }

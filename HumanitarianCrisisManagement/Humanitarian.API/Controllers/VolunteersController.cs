@@ -209,4 +209,17 @@ public class VolunteersController : ControllerBase
         var locations = await _volunteerService.GetActiveLocationsAsync(cancellationToken);
         return Ok(locations);
     }
+    // Get active assigned citizens for a specific volunteer (Fixes 404 route)
+    [Authorize(Roles = "Volunteer,Citizen,Coordinator,Admin")]
+    [HttpGet("{volunteerId:guid}/active-citizens")]
+    public async Task<ActionResult<IReadOnlyList<ActiveCitizenDto>>> GetActiveAssignedCitizens(
+        Guid volunteerId,
+        CancellationToken cancellationToken)
+    {
+        var citizens = await _volunteerService.GetActiveAssignedCitizensAsync(
+            volunteerId,
+            cancellationToken);
+
+        return Ok(citizens);
+    }
 }
