@@ -1,4 +1,5 @@
-﻿using Humanitarian.Application.Common.Interfaces;
+﻿
+using Humanitarian.Application.Common.Interfaces;
 using Humanitarian.Application.Features.Coordinator.DTOs;
 using Humanitarian.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -93,6 +94,7 @@ public class CoordinatorService : ICoordinatorService
             throw new ArgumentException("Invalid request status.");
         }
 
+        // Validate status transition
         var validTransition = assistanceRequest.Status switch
         {
             RequestStatus.Submitted =>
@@ -122,6 +124,31 @@ public class CoordinatorService : ICoordinatorService
                 $"Cannot change status from {assistanceRequest.Status} to {newStatus}.");
         }
 
+        // Assign volunteer to the assistance request
+        if (newStatus == RequestStatus.Assigned)
+        {
+            if (request.VolunteerId == null)
+            {
+                throw new ArgumentException(
+                    "Volunteer ID is required when assigning a request.");
+            }
+
+            var volunteer = await _context.VolunteerProfiles
+                .FirstOrDefaultAsync(
+                    v => v.Id == request.VolunteerId.Value,
+                    cancellationToken);
+
+            if (volunteer == null)
+            {
+                throw new KeyNotFoundException(
+                    "Volunteer not found.");
+            }
+
+            // Store Volunteer User ID in AssignedVolunteerId
+            assistanceRequest.AssignedVolunteerId = volunteer.UserId;
+        }
+
+        // Update request status
         assistanceRequest.Status = newStatus;
 
         if (newStatus == RequestStatus.Delivered)
@@ -151,12 +178,12 @@ public class CoordinatorService : ICoordinatorService
                 cancellationToken);
 
         var activeVolunteers = await _context.VolunteerProfiles
-    .CountAsync(
-        volunteer =>
-            volunteer.Availability == VolunteerAvailability.Available &&
-            (volunteer.VerificationStatus == VolunteerVerificationStatus.Verified ||
-             volunteer.VerificationStatus == VolunteerVerificationStatus.Active),
-        cancellationToken);
+            .CountAsync(
+                volunteer =>
+                    volunteer.Availability == VolunteerAvailability.Available &&
+                    (volunteer.VerificationStatus == VolunteerVerificationStatus.Verified ||
+                     volunteer.VerificationStatus == VolunteerVerificationStatus.Active),
+                cancellationToken);
 
         var availableResources = await _context.Shelters
             .Where(shelter => shelter.Status == ShelterStatus.Open)

@@ -515,16 +515,39 @@ public class VolunteerService : IVolunteerService
         }).ToList();
     }
 
-    // Get citizens currently assigned to the logged-in volunteer
+    // Get active assigned citizens for a specific volunteer
     public async Task<IReadOnlyList<ActiveCitizenDto>>
         GetActiveAssignedCitizensAsync(
-            Guid userId,
+            Guid volunteerId,
+            Guid currentUserId,
+            bool canViewAnyVolunteer,
             CancellationToken cancellationToken)
     {
+        // Find volunteer using Profile ID or User ID
+        var volunteer = await _context.VolunteerProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                v => v.Id == volunteerId || v.UserId == volunteerId,
+                cancellationToken);
+
+        if (volunteer == null)
+        {
+            throw new KeyNotFoundException("Volunteer not found.");
+        }
+
+        // Check whether the logged-in user has permission
+        if (!canViewAnyVolunteer && volunteer.UserId != currentUserId)
+        {
+            throw new UnauthorizedAccessException(
+                "You are not allowed to view another volunteer's assigned citizens.");
+        }
+
+        // Get active assigned citizens
         return await _context.AssistanceRequests
+            .AsNoTracking()
             .Include(r => r.Citizen)
             .Where(r =>
-                r.AssignedVolunteerId == userId &&
+                r.AssignedVolunteerId == volunteer.UserId &&
                 r.Status != RequestStatus.Delivered)
             .Select(r => new ActiveCitizenDto
             {
@@ -534,7 +557,9 @@ public class VolunteerService : IVolunteerService
                     ? r.Citizen.FullName
                     : "Unknown Citizen",
                 ContactInfo = r.Citizen != null
-                    ? (r.Citizen.PhoneNumber ?? r.Citizen.Email ?? "N/A")
+                    ? (!string.IsNullOrEmpty(r.Citizen.PhoneNumber)
+                        ? r.Citizen.PhoneNumber
+                        : r.Citizen.Email ?? "N/A")
                     : "N/A",
                 ExactDistressLocation = r.Location,
                 EmergencyCategory = r.Category.ToString(),

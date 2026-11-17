@@ -59,8 +59,9 @@ public interface IVolunteerService
     Task<IReadOnlyList<ActiveVolunteerLocationDto>> GetActiveLocationsAsync(
         CancellationToken cancellationToken);
 
-    // Get citizens currently assigned to the logged-in volunteer
     Task<IReadOnlyList<ActiveCitizenDto>> GetActiveAssignedCitizensAsync(
-        Guid userId,
-        CancellationToken cancellationToken);
+    Guid volunteerId,
+    Guid currentUserId,
+    bool canViewAnyVolunteer,
+    CancellationToken cancellationToken);
 }
