@@ -40,5 +40,22 @@ public AuthController(IAuthService authService)
         return Ok(response);
     }
 
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        var success = await _authService.VerifyOtpAsync(
+            request.Email,
+            request.Code,
+            cancellationToken);
+
+        if (!success)
+        {
+            return BadRequest(new { message = "Invalid or expired OTP code, or user not found." });
+        }
+
+        return Ok(new { message = "Account verified successfully. You can now log in." });
+    }
 
 }
