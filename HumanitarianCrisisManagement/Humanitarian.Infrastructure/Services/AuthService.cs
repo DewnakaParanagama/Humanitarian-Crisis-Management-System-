@@ -1,10 +1,10 @@
 ﻿using System.Security.Cryptography;
 using Humanitarian.Application.Common.Interfaces;
+using Humanitarian.Application.Interfaces;
 using Humanitarian.Application.Features.Authentication.DTOs;
 using Humanitarian.Domain.Common;
 using Humanitarian.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Humanitarian.Infrastructure.Services;
 
@@ -13,18 +13,18 @@ public class AuthService : IAuthService
     private readonly IAppDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
-    private readonly ILogger<AuthService> _logger;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         IAppDbContext context,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        ILogger<AuthService> logger)
+        IEmailService emailService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
-        _logger = logger;
+        _emailService = emailService;
     }
 
     public async Task<AuthResponse> RegisterAsync(
@@ -55,7 +55,10 @@ public class AuthService : IAuthService
 
         if (isCitizen)
         {
-            otpCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            otpCode = RandomNumberGenerator
+                .GetInt32(100000, 1000000)
+                .ToString();
+
             otpExpiry = DateTime.UtcNow.AddMinutes(10);
         }
 
@@ -76,16 +79,14 @@ public class AuthService : IAuthService
         };
 
         _context.Users.Add(user);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         if (isCitizen)
         {
-            // Log OTP for testing/development until email/SMS provider is configured
-            _logger.LogInformation(
-                "OTP generated for Citizen {Email}: {OtpCode} (expires at {Expiry} UTC)",
+            await _emailService.SendOtpEmailAsync(
                 user.Email,
-                otpCode,
-                otpExpiry);
+                otpCode!);
 
             return new AuthResponse
             {
