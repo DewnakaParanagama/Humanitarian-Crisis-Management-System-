@@ -16,6 +16,12 @@ public class CoordinatorRequestResponse
 
     public string Location { get; set; } = string.Empty;
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public string? AssignedShelterName { get; set; }
+
     public int AffectedPeopleCount { get; set; }
 
     public string Status { get; set; } = string.Empty;

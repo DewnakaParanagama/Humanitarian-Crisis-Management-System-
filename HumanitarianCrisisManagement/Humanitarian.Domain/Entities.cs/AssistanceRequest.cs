@@ -16,14 +16,21 @@ public class AssistanceRequest : BaseEntity
 
     public string Location { get; set; } = string.Empty;
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
     public int AffectedPeopleCount { get; set; } = 1;
 
     public RequestStatus Status { get; set; } = RequestStatus.Submitted;
 
     public Guid? AssignedOrganizationId { get; set; }
 
-    // Newly added to link a specific volunteer to this request
     public Guid? AssignedVolunteerId { get; set; }
+
+    public Guid? AssignedShelterId { get; set; }
+
+    public string? AssignedShelterName { get; set; }
 
     public string? AIRecommendation { get; set; }
 
@@ -33,8 +40,9 @@ public class AssistanceRequest : BaseEntity
 
     public ApplicationUser? Citizen { get; set; }
 
-    // Navigation property for the assigned volunteer
     public ApplicationUser? AssignedVolunteer { get; set; }
+
+    public Shelter? AssignedShelter { get; set; }
 
     public Crisis? Crisis { get; set; }
 }

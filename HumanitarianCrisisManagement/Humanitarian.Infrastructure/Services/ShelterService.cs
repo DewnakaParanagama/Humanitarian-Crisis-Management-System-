@@ -66,8 +66,9 @@ public class ShelterService : IShelterService
             .OrderBy(shelter => shelter.DistanceKm)
             .ToList();
     }
+
     public async Task<IReadOnlyList<ShelterResponseDto>>
-    GetAllSheltersAsync(CancellationToken cancellationToken)
+        GetAllSheltersAsync(CancellationToken cancellationToken)
     {
         var shelters = await _context.Shelters
             .AsNoTracking()
@@ -154,7 +155,7 @@ public class ShelterService : IShelterService
 
         var shelter = await _context.Shelters
             .FirstOrDefaultAsync(
-                shelter => shelter.Id == shelterId,
+                s => s.Id == shelterId,
                 cancellationToken);
 
         if (shelter == null)
@@ -165,6 +166,21 @@ public class ShelterService : IShelterService
 
         if (shelter.CurrentOccupancy + request.Count > shelter.TotalCapacity)
             throw new InvalidOperationException("Shelter capacity would be exceeded.");
+
+        // Optional RequestId linking
+        if (request.RequestId.HasValue && request.RequestId.Value != Guid.Empty)
+        {
+            var assistanceRequest = await _context.AssistanceRequests
+                .FirstOrDefaultAsync(
+                    r => r.Id == request.RequestId.Value,
+                    cancellationToken);
+
+            if (assistanceRequest == null)
+                throw new KeyNotFoundException("Assistance request not found.");
+
+            assistanceRequest.AssignedShelterId = shelter.Id;
+            assistanceRequest.AssignedShelterName = shelter.Name;
+        }
 
         shelter.CurrentOccupancy += request.Count;
 
@@ -190,6 +206,7 @@ public class ShelterService : IShelterService
             Organization = shelter.Organization
         };
     }
+
     private static double CalculateDistance(
         double lat1,
         double lon1,

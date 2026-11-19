@@ -1,5 +1,4 @@
-﻿
-using Humanitarian.Application.Common.Interfaces;
+﻿using Humanitarian.Application.Common.Interfaces;
 using Humanitarian.Application.Features.Coordinator.DTOs;
 using Humanitarian.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +41,12 @@ public class CoordinatorService : ICoordinatorService
                 Description = request.Description,
 
                 Location = request.Location,
+
+                Latitude = request.Latitude,
+
+                Longitude = request.Longitude,
+
+                AssignedShelterName = request.AssignedShelterName ?? (request.AssignedShelter != null ? request.AssignedShelter.Name : null),
 
                 AffectedPeopleCount = request.AffectedPeopleCount,
 

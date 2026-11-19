@@ -46,6 +46,16 @@ public class AssistanceRequestService : IAssistanceRequestService
             throw new ArgumentException("Invalid location.");
         }
 
+        if (request.Latitude.HasValue && (request.Latitude < -90 || request.Latitude > 90))
+        {
+            throw new ArgumentException("Invalid latitude.");
+        }
+
+        if (request.Longitude.HasValue && (request.Longitude < -180 || request.Longitude > 180))
+        {
+            throw new ArgumentException("Invalid longitude.");
+        }
+
         if (request.Affected < 1)
         {
             throw new ArgumentException(
@@ -71,6 +81,8 @@ public class AssistanceRequestService : IAssistanceRequestService
             PriorityUrgency = urgency,
             Description = request.Description.Trim(),
             Location = request.Location.Trim(),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             AffectedPeopleCount = request.Affected,
             Status = RequestStatus.Submitted
         };
@@ -81,9 +93,10 @@ public class AssistanceRequestService : IAssistanceRequestService
 
         return assistanceRequest.Id;
     }
+
     public async Task<IReadOnlyList<MyAssistanceRequestResponse>> GetMyRequestsAsync(
-    Guid citizenId,
-    CancellationToken cancellationToken)
+        Guid citizenId,
+        CancellationToken cancellationToken)
     {
         var requests = await _context.AssistanceRequests
             .AsNoTracking()
@@ -96,6 +109,9 @@ public class AssistanceRequestService : IAssistanceRequestService
                 Priority = request.PriorityUrgency.ToString(),
                 Description = request.Description,
                 Location = request.Location,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                AssignedShelterName = request.AssignedShelterName ?? (request.AssignedShelter != null ? request.AssignedShelter.Name : null),
                 AffectedPeopleCount = request.AffectedPeopleCount,
                 Status = request.Status.ToString(),
                 CreatedAtUtc = request.CreatedAtUtc
@@ -106,29 +122,29 @@ public class AssistanceRequestService : IAssistanceRequestService
     }
 
     public async Task<AssignedVolunteerDto?> GetAssignedVolunteerForRequestAsync(
-    Guid citizenId,
-    Guid requestId,
-    CancellationToken cancellationToken)
-{
-    var request = await _context.AssistanceRequests
-        .Include(r => r.AssignedVolunteer)
-        .FirstOrDefaultAsync(r => r.Id == requestId && r.CitizenId == citizenId, cancellationToken);
-
-    if (request == null || request.AssignedVolunteer == null)
+        Guid citizenId,
+        Guid requestId,
+        CancellationToken cancellationToken)
     {
-        return null;
+        var request = await _context.AssistanceRequests
+            .Include(r => r.AssignedVolunteer)
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.CitizenId == citizenId, cancellationToken);
+
+        if (request == null || request.AssignedVolunteer == null)
+        {
+            return null;
+        }
+
+        var volunteer = request.AssignedVolunteer;
+
+        return new AssignedVolunteerDto
+        {
+            VolunteerId = volunteer.Id,
+            Name = volunteer.FullName,
+            PhoneNumber = volunteer.PhoneNumber ?? string.Empty,
+            Email = volunteer.Email ?? string.Empty,
+            Status = "En Route / Assigned",
+            Skills = "General Emergency Response"
+        };
     }
-
-    var volunteer = request.AssignedVolunteer;
-
-    return new AssignedVolunteerDto
-    {
-        VolunteerId = volunteer.Id,
-        Name = volunteer.FullName,
-        PhoneNumber = volunteer.PhoneNumber ?? string.Empty,
-        Email = volunteer.Email ?? string.Empty,
-        Status = "En Route / Assigned",
-        Skills = "General Emergency Response"
-    };
-}
 }
