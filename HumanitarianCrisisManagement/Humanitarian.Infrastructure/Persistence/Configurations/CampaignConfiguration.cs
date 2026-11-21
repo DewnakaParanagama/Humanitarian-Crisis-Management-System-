@@ -11,9 +11,13 @@ namespace Humanitarian.Infrastructure.Persistence.Configurations
             builder.ToTable("Campaigns");
             builder.HasKey(c => c.Id);
 
-            builder.Property(c => c.Name)
+            builder.Property(c => c.Title)
                 .IsRequired()
-                .HasMaxLength(200);
+                .HasMaxLength(200)
+                .HasColumnName("Name");
+
+            builder.Property(c => c.Description)
+                .IsRequired();
 
             builder.Property(c => c.Status)
                 .HasMaxLength(50);
@@ -23,9 +27,10 @@ namespace Humanitarian.Infrastructure.Persistence.Configurations
                 .HasPrecision(18, 2)
                 .IsRequired();
 
-            builder.Property(c => c.RaisedAmount)
+            builder.Property(c => c.CurrentAmount)
                 .HasPrecision(18, 2)
-                .HasDefaultValue(0.00m);
+                .HasDefaultValue(0.00m)
+                .HasColumnName("RaisedAmount");
 
             // Configure Campaign - Donation relationship
             builder.HasMany(c => c.Donations)

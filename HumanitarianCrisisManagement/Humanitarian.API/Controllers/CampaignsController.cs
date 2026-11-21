@@ -25,10 +25,12 @@ public class CampaignsController : ControllerBase
             .Select(c => new CampaignResponseDto
             {
                 Id = c.Id,
-                Name = c.Name,
+                Title = c.Title,
+                Description = c.Description,
                 TargetAmount = c.TargetAmount,
-                RaisedAmount = c.RaisedAmount,
-                Status = c.Status
+                CurrentAmount = c.CurrentAmount,
+                Status = c.Status,
+                EndDate = c.EndDate
             })
             .ToListAsync(cancellationToken);
     }
@@ -41,10 +43,12 @@ public class CampaignsController : ControllerBase
             .Select(c => new CampaignResponseDto
             {
                 Id = c.Id,
-                Name = c.Name,
+                Title = c.Title,
+                Description = c.Description,
                 TargetAmount = c.TargetAmount,
-                RaisedAmount = c.RaisedAmount,
-                Status = c.Status
+                CurrentAmount = c.CurrentAmount,
+                Status = c.Status,
+                EndDate = c.EndDate
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -63,10 +67,12 @@ public class CampaignsController : ControllerBase
         var campaign = new Campaign
         {
             Id = Guid.NewGuid(),
-            Name = dto.Name,
+            Title = dto.Title,
+            Description = dto.Description,
             TargetAmount = dto.TargetAmount,
-            RaisedAmount = 0m,
-            Status = dto.Status ?? "Active"
+            CurrentAmount = dto.CurrentAmount,
+            Status = dto.Status ?? "Active",
+            EndDate = dto.EndDate
         };
 
         _context.Campaigns.Add(campaign);
@@ -75,10 +81,12 @@ public class CampaignsController : ControllerBase
         var response = new CampaignResponseDto
         {
             Id = campaign.Id,
-            Name = campaign.Name,
+            Title = campaign.Title,
+            Description = campaign.Description,
             TargetAmount = campaign.TargetAmount,
-            RaisedAmount = campaign.RaisedAmount,
-            Status = campaign.Status
+            CurrentAmount = campaign.CurrentAmount,
+            Status = campaign.Status,
+            EndDate = campaign.EndDate
         };
 
         return CreatedAtAction(nameof(GetCampaignById), new { id = campaign.Id }, response);
@@ -96,13 +104,25 @@ public class CampaignsController : ControllerBase
             return NotFound();
         }
 
-        campaign.Name = dto.Name ?? campaign.Name;
-        campaign.TargetAmount = dto.TargetAmount != 0 ? dto.TargetAmount : campaign.TargetAmount;
+        campaign.Title = dto.Title ?? campaign.Title;
+        campaign.Description = dto.Description ?? campaign.Description;
+        campaign.TargetAmount = dto.TargetAmount ?? campaign.TargetAmount;
+        campaign.CurrentAmount = dto.CurrentAmount ?? campaign.CurrentAmount;
         campaign.Status = dto.Status ?? campaign.Status;
+        campaign.EndDate = dto.EndDate ?? campaign.EndDate;
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return NoContent();
+        return Ok(new CampaignResponseDto
+        {
+            Id = campaign.Id,
+            Title = campaign.Title,
+            Description = campaign.Description,
+            TargetAmount = campaign.TargetAmount,
+            CurrentAmount = campaign.CurrentAmount,
+            Status = campaign.Status,
+            EndDate = campaign.EndDate
+        });
     }
 
     [HttpDelete("{id:guid}")]
