@@ -97,6 +97,12 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("AssignedOrganizationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AssignedShelterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssignedShelterName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("AssignedVolunteerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -120,10 +126,16 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<int>("PriorityUrgency")
                         .HasColumnType("int");
@@ -135,6 +147,8 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedShelterId");
 
                     b.HasIndex("AssignedVolunteerId");
 
@@ -633,6 +647,10 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Humanitarian.Domain.Entities.AssistanceRequest", b =>
                 {
+                    b.HasOne("Humanitarian.Domain.Entities.Shelter", "AssignedShelter")
+                        .WithMany()
+                        .HasForeignKey("AssignedShelterId");
+
                     b.HasOne("Humanitarian.Domain.Entities.ApplicationUser", "AssignedVolunteer")
                         .WithMany()
                         .HasForeignKey("AssignedVolunteerId");
@@ -647,6 +665,8 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("CrisisId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AssignedShelter");
 
                     b.Navigation("AssignedVolunteer");
 
