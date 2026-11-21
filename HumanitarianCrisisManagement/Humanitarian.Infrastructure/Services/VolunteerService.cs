@@ -4,7 +4,6 @@ using Humanitarian.Domain.Common;
 using Humanitarian.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Humanitarian.Infrastructure.Services;
 
 public class VolunteerService : IVolunteerService
@@ -282,7 +281,6 @@ public class VolunteerService : IVolunteerService
         volunteer.VerificationStatus = VolunteerVerificationStatus.Active;
 
         await _context.SaveChangesAsync(cancellationToken);
-
     }
 
     // Get logged-in volunteer profile
@@ -470,6 +468,7 @@ public class VolunteerService : IVolunteerService
             TasksCompleted = volunteer.TasksCompleted
         };
     }
+
     // Update live location
     public async Task UpdateLiveLocationAsync(
         Guid userId,
@@ -561,8 +560,18 @@ public class VolunteerService : IVolunteerService
                         ? r.Citizen.PhoneNumber
                         : r.Citizen.Email ?? "N/A")
                     : "N/A",
+                ContactNumber = r.Citizen != null && !string.IsNullOrEmpty(r.Citizen.PhoneNumber)
+                    ? r.Citizen.PhoneNumber
+                    : string.Empty,
+                PhoneNumber = r.Citizen != null && !string.IsNullOrEmpty(r.Citizen.PhoneNumber)
+                    ? r.Citizen.PhoneNumber
+                    : string.Empty,
                 ExactDistressLocation = r.Location,
+                Location = r.Location,
                 EmergencyCategory = r.Category.ToString(),
+                Category = r.Category.ToString(),
+                Urgency = r.PriorityUrgency.ToString(),
+                Description = r.Description,
                 Status = r.Status.ToString()
             })
             .ToListAsync(cancellationToken);

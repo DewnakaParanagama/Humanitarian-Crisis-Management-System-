@@ -57,6 +57,7 @@ public class ShelterService : IShelterService
                     Longitude = shelter.Longitude.Value,
                     TotalCapacity = shelter.TotalCapacity,
                     CurrentOccupancy = shelter.CurrentOccupancy,
+                    ContactNumber = shelter.Contact ?? string.Empty,
                     Facilities = shelter.Facilities,
                     Status = shelter.Status.ToString(),
                     DistanceKm = Math.Round(distance, 2)
@@ -66,8 +67,9 @@ public class ShelterService : IShelterService
             .OrderBy(shelter => shelter.DistanceKm)
             .ToList();
     }
+
     public async Task<IReadOnlyList<ShelterResponseDto>>
-    GetAllSheltersAsync(CancellationToken cancellationToken)
+        GetAllSheltersAsync(CancellationToken cancellationToken)
     {
         var shelters = await _context.Shelters
             .AsNoTracking()
@@ -190,6 +192,7 @@ public class ShelterService : IShelterService
             Organization = shelter.Organization
         };
     }
+
     private static double CalculateDistance(
         double lat1,
         double lon1,
