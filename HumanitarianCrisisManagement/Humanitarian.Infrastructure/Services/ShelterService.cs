@@ -57,6 +57,7 @@ public class ShelterService : IShelterService
                     Longitude = shelter.Longitude.Value,
                     TotalCapacity = shelter.TotalCapacity,
                     CurrentOccupancy = shelter.CurrentOccupancy,
+                    ContactNumber = shelter.Contact ?? string.Empty,
                     Facilities = shelter.Facilities,
                     Status = shelter.Status.ToString(),
                     DistanceKm = Math.Round(distance, 2)
