@@ -14,9 +14,13 @@ public class NearbyShelterResponse
 
     public int TotalCapacity { get; set; }
 
+    public int Capacity => TotalCapacity;
+
     public int CurrentOccupancy { get; set; }
 
     public int AvailableSpaces => TotalCapacity - CurrentOccupancy;
+
+    public string ContactNumber { get; set; } = string.Empty;
 
     public List<string> Facilities { get; set; } = new();
 
