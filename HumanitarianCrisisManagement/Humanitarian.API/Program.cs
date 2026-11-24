@@ -1,49 +1,162 @@
-using Humanitarian.API.Middleware;
-using Humanitarian.Application;
-using Humanitarian.Infrastructure;
+
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Humanitarian.API.Middleware;
+using Humanitarian.API.Services;
+using Humanitarian.Application;
+using Humanitarian.Application.Common.Interfaces;
+using Humanitarian.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Register Application and Infrastructure services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Global error handling (RFC 7807 ProblemDetails)
+// Register Global Exception Handling
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// Add services to the container.
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy =
-            JsonNamingPolicy.CamelCase;
+// JWT Configuration
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("JWT Issuer is missing.");
 
-        options.JsonSerializerOptions.Converters.Add(
-            new JsonStringEnumConverter());
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("JWT Audience is missing.");
+
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey is missing.");
+
+var jwtKey = Encoding.UTF8.GetBytes(jwtSecretKey);
+
+if (jwtKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        "JWT SecretKey must be at least 32 bytes long.");
+}
+
+// Authentication Configuration
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(jwtKey),
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+
+            // Explicitly configure JWT claim mapping
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.NameIdentifier
+        };
     });
 
-// OpenAPI configuration
+// Role-Based Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("CoordinatorOnly", policy =>
+        policy.RequireRole("Coordinator"));
+
+    options.AddPolicy("CitizenOnly", policy =>
+        policy.RequireRole("Citizen"));
+
+    options.AddPolicy("VolunteerOnly", policy =>
+        policy.RequireRole("Volunteer"));
+
+    options.AddPolicy("ShelterAdminOnly", policy =>
+        policy.RequireRole("ShelterAdmin"));
+
+    options.AddPolicy("ResourceManagerOnly", policy =>
+        policy.RequireRole("ResourceMgr"));
+});
+
+// Register Validation Filter
+builder.Services.AddScoped<ValidationFilter>();
+
+// Controllers and JSON Configuration
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<ValidationFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy =
+        JsonNamingPolicy.CamelCase;
+
+    options.JsonSerializerOptions.Converters.Add(
+        new JsonStringEnumConverter());
+});
+
+// CORS Configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:8443",
+                "http://127.0.0.1:8443"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+// OpenAPI Configuration
 builder.Services.AddOpenApi();
 
+// Add SignalR Service
+builder.Services.AddSignalR();
+
+// Build Application
 var app = builder.Build();
 
-// Must be early in the pipeline to catch downstream errors.
+// Root Endpoint
+app.MapGet("/", () => Results.Redirect("/scalar"));
+
+// Global Exception Handling
 app.UseExceptionHandler();
 
-// Configure the HTTP request pipeline.
+// Configure HTTP Request Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
+// Middleware
+app.UseCors("FrontendPolicy");
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
+// Map Controllers
 app.MapControllers();
 
+// Map SignalR Hub
+app.MapHub<Humanitarian.API.Hubs.NotificationHub>("/hubs/notifications");
+
+// Run Application
 app.Run();

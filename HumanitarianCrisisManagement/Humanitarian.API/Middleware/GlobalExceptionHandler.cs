@@ -61,6 +61,14 @@ public class GlobalExceptionHandler : IExceptionHandler
                     Detail = exception.Message
                 };
                 break;
+            case InvalidOperationException:
+                problem = new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Bad request",
+                    Detail = exception.Message
+                };
+                break;
 
             case BusinessRuleException:
                 problem = new ProblemDetails
@@ -83,6 +91,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                     Status = StatusCodes.Status500InternalServerError,
                     Title = "An unexpected error occurred",
                     Detail = "Something went wrong on the server. Please try again later."
+
                 };
                 break;
         }
