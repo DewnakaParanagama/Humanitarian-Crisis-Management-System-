@@ -34,6 +34,8 @@ public class AssistanceRequest : BaseEntity
 
     public string? AIRecommendation { get; set; }
 
+    public string? AISummary { get; set; }
+
     public decimal? AIConfidenceScore { get; set; }
 
     public DateTime? DeliveredAtUtc { get; set; }

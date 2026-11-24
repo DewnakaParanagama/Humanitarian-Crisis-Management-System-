@@ -1,4 +1,6 @@
-﻿namespace Humanitarian.Application.Features.Requests.DTOs;
+﻿using Humanitarian.Application.Features.AI.DTOs;
+
+namespace Humanitarian.Application.Features.Requests.DTOs;
 
 public class CreateAssistanceRequest
 {
@@ -17,4 +19,13 @@ public class CreateAssistanceRequest
     public int Affected { get; set; } = 1;
 
     public Guid? ShelterId { get; set; }
+
+    [SupportedLanguage]
+    public string Language
+    {
+        get => _language;
+        set => _language = SupportedLanguages.Normalize(value);
+    }
+
+    private string _language = SupportedLanguages.English;
 }

@@ -34,8 +34,11 @@ public class AssistanceRequestConfiguration
         builder.Property(request => request.AIRecommendation)
             .HasMaxLength(2000);
 
+        builder.Property(request => request.AISummary)
+            .HasMaxLength(4000);
+
         builder.Property(request => request.AIConfidenceScore)
-            .HasPrecision(5, 4);
+            .HasPrecision(5, 2);
 
         builder.HasOne(request => request.Citizen)
             .WithMany()

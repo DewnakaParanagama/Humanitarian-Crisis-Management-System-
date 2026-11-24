@@ -2,6 +2,8 @@
 
 public class AIAnalysisResponse
 {
+    public string Summary { get; set; } = string.Empty;
+
     public int ConfidenceScore { get; set; }
 
     public string CalculatedUrgency { get; set; } = string.Empty;
