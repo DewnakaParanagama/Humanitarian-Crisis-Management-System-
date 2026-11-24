@@ -1,4 +1,6 @@
-﻿namespace Humanitarian.Application.Features.AI.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Humanitarian.Application.Features.AI.DTOs;
 
 public class AnalyzeRequestDto
 {
@@ -16,5 +18,12 @@ public class AnalyzeRequestDto
 
     public double? Longitude { get; set; }
 
-    public string Language { get; set; } = "English";
+    [SupportedLanguage]
+    public string Language
+    {
+        get => _language;
+        set => _language = SupportedLanguages.Normalize(value);
+    }
+
+    private string _language = SupportedLanguages.English;
 }

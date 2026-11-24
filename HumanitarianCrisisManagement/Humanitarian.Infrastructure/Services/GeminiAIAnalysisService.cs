@@ -29,6 +29,14 @@ public class GeminiAIAnalysisService : IAIAnalysisService
         AnalyzeRequestDto request,
         CancellationToken cancellationToken)
     {
+        var language = SupportedLanguages.Normalize(request.Language);
+        if (!SupportedLanguages.IsSupported(language))
+        {
+            throw new ArgumentException(
+                "Language must be English, Sinhala, Tamil, en, si, or ta.",
+                nameof(request));
+        }
+
         var shelters = await _context.Shelters
             .AsNoTracking()
             .Where(shelter => shelter.Status == ShelterStatus.Open &&
@@ -80,10 +88,6 @@ public class GeminiAIAnalysisService : IAIAnalysisService
                 $"quantity: {resource.Quantity} {resource.Unit} | " +
                 $"location: {resource.Location}")
             .ToList();
-
-        var language = string.IsNullOrWhiteSpace(request.Language)
-            ? "English"
-            : request.Language.Trim();
 
         var prompt = $"""
             You are an AI assistant supporting humanitarian emergency coordination.
@@ -152,36 +156,67 @@ public class GeminiAIAnalysisService : IAIAnalysisService
         httpRequest.Headers.Add("x-goog-api-key", _apiKey);
         httpRequest.Content = content;
 
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        using var document = JsonDocument.Parse(responseBody);
-        var aiText = document.RootElement.GetProperty("candidates")[0]
-            .GetProperty("content").GetProperty("parts")[0]
-            .GetProperty("text").GetString();
-
-        if (string.IsNullOrWhiteSpace(aiText))
+        try
         {
-            throw new InvalidOperationException("Gemini returned an empty response.");
+            using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            using var document = JsonDocument.Parse(responseBody);
+            var aiText = document.RootElement.GetProperty("candidates")[0]
+                .GetProperty("content").GetProperty("parts")[0]
+                .GetProperty("text").GetString();
+
+            if (string.IsNullOrWhiteSpace(aiText))
+            {
+                throw new InvalidOperationException("Gemini returned an empty response.");
+            }
+
+            var result = JsonSerializer.Deserialize<AIAnalysisResponse>(
+                aiText,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (result == null || string.IsNullOrWhiteSpace(result.Summary) ||
+                result.ConfidenceScore is < 0 or > 100 ||
+                result.UrgencyScore is < 1 or > 10 ||
+                string.IsNullOrWhiteSpace(result.CalculatedUrgency) ||
+                string.IsNullOrWhiteSpace(result.RecommendedAction) ||
+                string.IsNullOrWhiteSpace(result.NearestResource))
+            {
+                throw new InvalidOperationException("Gemini returned an invalid analysis.");
+            }
+
+            return result;
         }
-
-        var result = JsonSerializer.Deserialize<AIAnalysisResponse>(
-            aiText,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        if (result == null || string.IsNullOrWhiteSpace(result.Summary) ||
-            result.ConfidenceScore is < 0 or > 100 ||
-            result.UrgencyScore is < 1 or > 10 ||
-            string.IsNullOrWhiteSpace(result.CalculatedUrgency) ||
-            string.IsNullOrWhiteSpace(result.RecommendedAction) ||
-            string.IsNullOrWhiteSpace(result.NearestResource))
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new InvalidOperationException("Gemini returned an invalid analysis.");
+            return CreateFallbackAnalysis(language);
         }
-
-        return result;
+        catch (HttpRequestException)
+        {
+            return CreateFallbackAnalysis(language);
+        }
+        catch (JsonException)
+        {
+            return CreateFallbackAnalysis(language);
+        }
+        catch (InvalidOperationException)
+        {
+            return CreateFallbackAnalysis(language);
+        }
     }
+
+    private static AIAnalysisResponse CreateFallbackAnalysis(string language) => new()
+    {
+        Summary = language == SupportedLanguages.English
+            ? "AI analysis is currently unavailable."
+            : "AI analysis is currently unavailable; please review this request manually.",
+        ConfidenceScore = 0,
+        CalculatedUrgency = "Unknown",
+        UrgencyScore = 1,
+        RecommendedAction = "Please review this request manually.",
+        NearestResource = "None available."
+    };
 
     private static double DistanceInKilometers(
         double? latitude1,
