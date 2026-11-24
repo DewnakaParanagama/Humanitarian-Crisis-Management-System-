@@ -1,4 +1,5 @@
 ﻿using Humanitarian.Application.Common.Interfaces;
+using Humanitarian.Application.Features.AI.DTOs;
 using Humanitarian.Application.Features.Requests.DTOs;
 using Humanitarian.Domain.Common;
 using Humanitarian.Domain.Entities;
@@ -9,10 +10,14 @@ namespace Humanitarian.Infrastructure.Services;
 public class AssistanceRequestService : IAssistanceRequestService
 {
     private readonly IAppDbContext _context;
+    private readonly IAIAnalysisService _aiAnalysisService;
 
-    public AssistanceRequestService(IAppDbContext context)
+    public AssistanceRequestService(
+        IAppDbContext context,
+        IAIAnalysisService aiAnalysisService)
     {
         _context = context;
+        _aiAnalysisService = aiAnalysisService;
     }
 
     // =========================================================
@@ -118,6 +123,24 @@ public class AssistanceRequestService : IAssistanceRequestService
             AssignedShelterName = selectedShelter?.Name
         };
 
+        var analysis = await _aiAnalysisService.AnalyzeRequestAsync(
+            new AnalyzeRequestDto
+            {
+                Category = request.Category,
+                Urgency = request.Urgency,
+                Description = request.Description,
+                Location = request.Location,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Affected = request.Affected,
+                Language = request.Language
+            },
+            cancellationToken);
+
+        assistanceRequest.AISummary = analysis.Summary;
+        assistanceRequest.AIRecommendation = analysis.RecommendedAction;
+        assistanceRequest.AIConfidenceScore = analysis.ConfidenceScore;
+
         _context.AssistanceRequests.Add(assistanceRequest);
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -151,6 +174,9 @@ public class AssistanceRequestService : IAssistanceRequestService
                     (request.AssignedShelter != null
                         ? request.AssignedShelter.Name
                         : null),
+                 AISummary = request.AISummary,
+                 AIRecommendation = request.AIRecommendation,
+                 AIConfidenceScore = request.AIConfidenceScore,
                 AffectedPeopleCount = request.AffectedPeopleCount,
                 Status = request.Status.ToString(),
                 CreatedAtUtc = request.CreatedAtUtc
@@ -271,6 +297,26 @@ public class AssistanceRequestService : IAssistanceRequestService
             AssignedShelterName = shelter.Name
         };
 
+        var analysis = await _aiAnalysisService.AnalyzeRequestAsync(
+            new AnalyzeRequestDto
+            {
+                Category = RequestCategory.Shelter.ToString(),
+                Urgency = string.IsNullOrWhiteSpace(request.Urgency)
+                    ? RequestPriority.Medium.ToString()
+                    : request.Urgency,
+                Description = request.Description,
+                Location = request.Location,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Affected = request.Affected,
+                Language = request.Language
+            },
+            cancellationToken);
+
+        shelterRequest.AISummary = analysis.Summary;
+        shelterRequest.AIRecommendation = analysis.RecommendedAction;
+        shelterRequest.AIConfidenceScore = analysis.ConfidenceScore;
+
         _context.AssistanceRequests.Add(shelterRequest);
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -320,6 +366,9 @@ public class AssistanceRequestService : IAssistanceRequestService
                 Latitude = r.Latitude,
                 Longitude = r.Longitude,
                 AssignedShelterName = r.AssignedShelterName,
+                 AISummary = r.AISummary,
+                 AIRecommendation = r.AIRecommendation,
+                 AIConfidenceScore = r.AIConfidenceScore,
                 AffectedPeopleCount = r.AffectedPeopleCount,
                 Status = r.Status.ToString(),
                 CreatedAtUtc = r.CreatedAtUtc

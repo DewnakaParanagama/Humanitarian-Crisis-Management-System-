@@ -17,4 +17,6 @@ public class CreateAssistanceRequest
     public int Affected { get; set; } = 1;
 
     public Guid? ShelterId { get; set; }
+
+    public string Language { get; set; } = "English";
 }

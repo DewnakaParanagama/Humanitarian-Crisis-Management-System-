@@ -11,4 +11,10 @@ public class AnalyzeRequestDto
     public string Location { get; set; } = string.Empty;
 
     public int Affected { get; set; }
+
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public string Language { get; set; } = "English";
 }
