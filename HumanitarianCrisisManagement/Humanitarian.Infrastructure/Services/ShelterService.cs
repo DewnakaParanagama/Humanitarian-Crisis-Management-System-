@@ -76,22 +76,37 @@ public class ShelterService : IShelterService
             .OrderBy(shelter => shelter.Name)
             .ToListAsync(cancellationToken);
 
-        return shelters.Select(shelter => new ShelterResponseDto
+        var result = new List<ShelterResponseDto>();
+
+        foreach (var shelter in shelters)
         {
-            Id = shelter.Id,
-            Name = shelter.Name,
-            Location = shelter.Location,
-            District = shelter.District,
-            Latitude = shelter.Latitude,
-            Longitude = shelter.Longitude,
-            Capacity = shelter.TotalCapacity,
-            Occupied = shelter.CurrentOccupancy,
-            Status = shelter.Status.ToString(),
-            Facilities = shelter.Facilities,
-            Accessible = shelter.Accessible,
-            Contact = shelter.Contact,
-            Organization = shelter.Organization
-        }).ToList();
+            var manager = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    user => user.Id == shelter.ShelterAdminId,
+                    cancellationToken);
+
+            result.Add(new ShelterResponseDto
+            {
+                Id = shelter.Id,
+                Name = shelter.Name,
+                Location = shelter.Location,
+                District = shelter.District,
+                Latitude = shelter.Latitude,
+                Longitude = shelter.Longitude,
+                Capacity = shelter.TotalCapacity,
+                Occupied = shelter.CurrentOccupancy,
+                Status = shelter.Status.ToString(),
+                Facilities = shelter.Facilities,
+                Accessible = shelter.Accessible,
+                Contact = shelter.Contact,
+                Organization = shelter.Organization,
+                ManagerId = manager?.Id,
+                ManagerName = manager?.FullName
+            });
+        }
+
+        return result;
     }
 
     public async Task<ShelterResponseDto> CreateShelterAsync(
@@ -108,6 +123,29 @@ public class ShelterService : IShelterService
         if (request.Longitude < -180 || request.Longitude > 180)
             throw new ArgumentException("Invalid longitude.");
 
+        var volunteerProfile = await _context.VolunteerProfiles
+            .FirstOrDefaultAsync(
+                v => v.Id == request.ManagerVolunteerId ||
+                      v.UserId == request.ManagerVolunteerId,
+                cancellationToken);
+
+        if (volunteerProfile == null)
+            throw new KeyNotFoundException("Volunteer profile not found.");
+
+        if (volunteerProfile.VerificationStatus != VolunteerVerificationStatus.Verified)
+            throw new InvalidOperationException(
+                "Only verified volunteers can be assigned as shelter managers.");
+
+        var managerUser = await _context.Users
+            .FirstOrDefaultAsync(
+                u => u.Id == volunteerProfile.UserId,
+                cancellationToken);
+
+        if (managerUser == null)
+            throw new KeyNotFoundException("Volunteer user account not found.");
+
+        managerUser.Role = UserRole.ShelterAdmin;
+
         var shelter = new Humanitarian.Domain.Entities.Shelter
         {
             Name = request.Name,
@@ -122,10 +160,11 @@ public class ShelterService : IShelterService
             Accessible = request.Accessible,
             Facilities = request.Facilities,
             Status = ShelterStatus.Open,
-            ShelterAdminId = shelterAdminId
+            ShelterAdminId = managerUser.Id
         };
 
         _context.Shelters.Add(shelter);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return new ShelterResponseDto
@@ -142,7 +181,9 @@ public class ShelterService : IShelterService
             Facilities = shelter.Facilities,
             Accessible = shelter.Accessible,
             Contact = shelter.Contact,
-            Organization = shelter.Organization
+            Organization = shelter.Organization,
+            ManagerId = managerUser.Id,
+            ManagerName = managerUser.FullName
         };
     }
 
@@ -163,13 +204,15 @@ public class ShelterService : IShelterService
             throw new KeyNotFoundException("Shelter not found.");
 
         if (shelter.Status == ShelterStatus.Closed)
-            throw new InvalidOperationException("Cannot allocate people to a closed shelter.");
+            throw new InvalidOperationException(
+                "Cannot allocate people to a closed shelter.");
 
         if (shelter.CurrentOccupancy + request.Count > shelter.TotalCapacity)
-            throw new InvalidOperationException("Shelter capacity would be exceeded.");
+            throw new InvalidOperationException(
+                "Shelter capacity would be exceeded.");
 
-        // Optional RequestId linking
-        if (request.RequestId.HasValue && request.RequestId.Value != Guid.Empty)
+        if (request.RequestId.HasValue &&
+            request.RequestId.Value != Guid.Empty)
         {
             var assistanceRequest = await _context.AssistanceRequests
                 .FirstOrDefaultAsync(
@@ -177,7 +220,8 @@ public class ShelterService : IShelterService
                     cancellationToken);
 
             if (assistanceRequest == null)
-                throw new KeyNotFoundException("Assistance request not found.");
+                throw new KeyNotFoundException(
+                    "Assistance request not found.");
 
             assistanceRequest.AssignedShelterId = shelter.Id;
             assistanceRequest.AssignedShelterName = shelter.Name;
@@ -189,6 +233,12 @@ public class ShelterService : IShelterService
             shelter.Status = ShelterStatus.Full;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        var manager = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                user => user.Id == shelter.ShelterAdminId,
+                cancellationToken);
 
         return new ShelterResponseDto
         {
@@ -204,9 +254,104 @@ public class ShelterService : IShelterService
             Facilities = shelter.Facilities,
             Accessible = shelter.Accessible,
             Contact = shelter.Contact,
-            Organization = shelter.Organization
+            Organization = shelter.Organization,
+            ManagerId = manager?.Id,
+            ManagerName = manager?.FullName
         };
     }
+
+    // ==========================================
+    // SHELTER ROSTER
+    // ==========================================
+
+    public async Task<ShelterRosterDto> GetShelterRosterAsync(
+        Guid shelterId,
+        Guid shelterAdminId,
+        CancellationToken cancellationToken)
+    {
+        var shelter = await _context.Shelters
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                s => s.Id == shelterId,
+                cancellationToken);
+
+        if (shelter == null)
+            throw new KeyNotFoundException("Shelter not found.");
+
+        if (shelter.ShelterAdminId != shelterAdminId)
+            throw new UnauthorizedAccessException(
+                "You are not authorized to manage this shelter.");
+
+        // Get citizens assigned to this shelter
+        var citizenIds = await _context.AssistanceRequests
+            .AsNoTracking()
+            .Where(r =>
+                r.AssignedShelterId == shelterId &&
+                r.Category == RequestCategory.Shelter &&
+                (r.Status == RequestStatus.Verified ||
+                 r.Status == RequestStatus.Assigned ||
+                 r.Status == RequestStatus.InProgress ||
+                 r.Status == RequestStatus.Delivered))
+            .Select(r => r.CitizenId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var citizens = await _context.Users
+            .AsNoTracking()
+            .Where(u => citizenIds.Contains(u.Id))
+            .Select(u => new ShelterRosterMemberDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Role = u.Role.ToString(),
+                Status = u.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
+
+        // Get volunteers assigned to this shelter
+        var volunteerProfileIds = await _context.VolunteerAssignments
+            .AsNoTracking()
+            .Where(a =>
+                a.TargetId == shelterId &&
+                a.TargetType == "Shelter" &&
+                a.Status == "Assigned")
+            .Select(a => a.VolunteerProfileId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var volunteerUserIds = await _context.VolunteerProfiles
+            .AsNoTracking()
+            .Where(v => volunteerProfileIds.Contains(v.Id))
+            .Select(v => v.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var volunteers = await _context.Users
+            .AsNoTracking()
+            .Where(u => volunteerUserIds.Contains(u.Id))
+            .Select(u => new ShelterRosterMemberDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Role = u.Role.ToString(),
+                Status = u.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
+
+        return new ShelterRosterDto
+        {
+            Citizens = citizens,
+            Volunteers = volunteers
+        };
+    }
+
+    // ==========================================
+    // DISTANCE CALCULATIONS
+    // ==========================================
 
     private static double CalculateDistance(
         double lat1,

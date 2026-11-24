@@ -224,16 +224,19 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal>("RaisedAmount")
+                    b.Property<decimal>("CurrentAmount")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0.00m);
+                        .HasDefaultValue(0.00m)
+                        .HasColumnName("RaisedAmount");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -243,6 +246,12 @@ namespace Humanitarian.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("TargetAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Name");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");

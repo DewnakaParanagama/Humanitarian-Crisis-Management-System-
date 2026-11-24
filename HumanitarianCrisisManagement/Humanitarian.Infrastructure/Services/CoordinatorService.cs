@@ -103,7 +103,8 @@ public class CoordinatorService : ICoordinatorService
         var validTransition = assistanceRequest.Status switch
         {
             RequestStatus.Submitted =>
-                newStatus == RequestStatus.Review,
+    newStatus == RequestStatus.Review ||
+    newStatus == RequestStatus.Assigned,
 
             RequestStatus.Review =>
                 newStatus == RequestStatus.Verified,

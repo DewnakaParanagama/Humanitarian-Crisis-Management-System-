@@ -221,10 +221,6 @@ public class VolunteerService : IVolunteerService
                 "Only verified volunteers can be dispatched.");
         }
 
-        if (volunteer.Availability != VolunteerAvailability.Available)
-            throw new InvalidOperationException(
-                "Volunteer is not currently available.");
-
         if (request.TargetId == Guid.Empty)
             throw new ArgumentException("Invalid target ID.");
 

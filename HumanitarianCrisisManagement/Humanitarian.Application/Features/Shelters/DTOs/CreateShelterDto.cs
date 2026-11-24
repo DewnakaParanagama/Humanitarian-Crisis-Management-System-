@@ -14,6 +14,8 @@ public class CreateShelterDto
 
     public int Capacity { get; set; }
 
+    public Guid ManagerVolunteerId { get; set; }
+
     public string Contact { get; set; } = string.Empty;
 
     public string Organization { get; set; } = string.Empty;

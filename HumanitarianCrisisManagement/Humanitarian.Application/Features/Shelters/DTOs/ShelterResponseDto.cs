@@ -27,4 +27,8 @@ public class ShelterResponseDto
     public string Contact { get; set; } = string.Empty;
 
     public string Organization { get; set; } = string.Empty;
+
+    public Guid? ManagerId { get; set; }
+
+    public string? ManagerName { get; set; }
 }

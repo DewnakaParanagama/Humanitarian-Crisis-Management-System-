@@ -15,4 +15,6 @@ public class CreateAssistanceRequest
     public double? Longitude { get; set; }
 
     public int Affected { get; set; } = 1;
+
+    public Guid? ShelterId { get; set; }
 }

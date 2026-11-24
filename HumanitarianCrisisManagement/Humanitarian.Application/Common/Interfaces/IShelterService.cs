@@ -17,13 +17,19 @@ public interface IShelterService
 
     // Create a new shelter
     Task<ShelterResponseDto> CreateShelterAsync(
-     CreateShelterDto request,
-     Guid shelterAdminId,
-     CancellationToken cancellationToken);
+        CreateShelterDto request,
+        Guid shelterAdminId,
+        CancellationToken cancellationToken);
 
     // Allocate people to a shelter
     Task<ShelterResponseDto> AllocatePeopleAsync(
         Guid shelterId,
         AllocateShelterDto request,
+        CancellationToken cancellationToken);
+
+    // Get shelter roster (citizens and volunteers)
+    Task<ShelterRosterDto> GetShelterRosterAsync(
+        Guid shelterId,
+        Guid shelterAdminId,
         CancellationToken cancellationToken);
 }

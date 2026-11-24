@@ -131,7 +131,7 @@ public class GeminiAIAnalysisService : IAIAnalysisService
         var responseBody = await response.Content.ReadAsStringAsync(
             cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+            response.EnsureSuccessStatusCode();
 
         using var document = JsonDocument.Parse(responseBody);
 
