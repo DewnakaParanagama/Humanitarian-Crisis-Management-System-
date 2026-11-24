@@ -8,28 +8,30 @@ public partial class AlignCampaignFields : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<string>(
-            name: "Description",
-            table: "Campaigns",
-            type: "nvarchar(max)",
-            nullable: false,
-            defaultValue: "");
+        migrationBuilder.Sql("""
+            IF COL_LENGTH('dbo.Campaigns', 'Description') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[Campaigns]
+                ADD [Description] nvarchar(max) NOT NULL
+                DEFAULT N'';
+            END;
 
-        migrationBuilder.AddColumn<DateTime>(
-            name: "EndDate",
-            table: "Campaigns",
-            type: "datetime2",
-            nullable: true);
+            IF COL_LENGTH('dbo.Campaigns', 'EndDate') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[Campaigns]
+                ADD [EndDate] datetime2 NULL;
+            END;
+            """);
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropColumn(
-            name: "Description",
-            table: "Campaigns");
+        migrationBuilder.Sql("""
+            IF COL_LENGTH('dbo.Campaigns', 'EndDate') IS NOT NULL
+                ALTER TABLE [dbo].[Campaigns] DROP COLUMN [EndDate];
 
-        migrationBuilder.DropColumn(
-            name: "EndDate",
-            table: "Campaigns");
+            IF COL_LENGTH('dbo.Campaigns', 'Description') IS NOT NULL
+                ALTER TABLE [dbo].[Campaigns] DROP COLUMN [Description];
+            """);
     }
 }
