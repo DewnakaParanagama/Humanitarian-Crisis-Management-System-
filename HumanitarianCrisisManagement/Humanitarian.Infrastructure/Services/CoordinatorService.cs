@@ -48,6 +48,12 @@ public class CoordinatorService : ICoordinatorService
 
                 AssignedShelterName = request.AssignedShelterName ?? (request.AssignedShelter != null ? request.AssignedShelter.Name : null),
 
+                AISummary = request.AISummary,
+
+                AIRecommendation = request.AIRecommendation,
+
+                AIConfidenceScore = request.AIConfidenceScore,
+
                 AffectedPeopleCount = request.AffectedPeopleCount,
 
                 Status = request.Status == RequestStatus.Review

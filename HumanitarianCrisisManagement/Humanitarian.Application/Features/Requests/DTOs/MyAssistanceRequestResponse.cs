@@ -18,6 +18,12 @@ public class MyAssistanceRequestResponse
 
     public string? AssignedShelterName { get; set; }
 
+    public string? AISummary { get; set; }
+
+    public string? AIRecommendation { get; set; }
+
+    public decimal? AIConfidenceScore { get; set; }
+
     public int AffectedPeopleCount { get; set; }
 
     public string Status { get; set; } = string.Empty;
