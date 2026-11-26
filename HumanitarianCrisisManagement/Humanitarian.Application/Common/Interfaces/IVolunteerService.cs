@@ -18,7 +18,8 @@ public interface IVolunteerService
 
     // Get all volunteers
     Task<IReadOnlyList<VolunteerResponseDto>> GetAllVolunteersAsync(
-        CancellationToken cancellationToken);
+    bool activeOnly,
+    CancellationToken cancellationToken);
 
     // Update volunteer verification status
     Task<VolunteerResponseDto> UpdateVolunteerStatusAsync(

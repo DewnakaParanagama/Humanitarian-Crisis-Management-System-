@@ -152,7 +152,7 @@ public class GeminiAIAnalysisService : IAIAnalysisService
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         using var httpRequest = new HttpRequestMessage(
             HttpMethod.Post,
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent");
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent");
         httpRequest.Headers.Add("x-goog-api-key", _apiKey);
         httpRequest.Content = content;
 
@@ -160,6 +160,10 @@ public class GeminiAIAnalysisService : IAIAnalysisService
         {
             using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            Console.WriteLine($"Gemini Status: {(int)response.StatusCode}");
+            Console.WriteLine($"Gemini Error: {responseBody}");
+
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(responseBody);

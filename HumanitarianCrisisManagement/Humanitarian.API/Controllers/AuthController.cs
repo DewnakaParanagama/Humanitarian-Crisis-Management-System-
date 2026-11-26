@@ -27,17 +27,26 @@ public AuthController(IAuthService authService)
 
         return StatusCode(StatusCodes.Status201Created, response);
     }
-
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
-        var response = await _authService.LoginAsync(
-            request,
-            cancellationToken);
+        try
+        {
+            var response = await _authService.LoginAsync(
+                request,
+                cancellationToken);
 
-        return Ok(response);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     [HttpPost("verify-otp")]

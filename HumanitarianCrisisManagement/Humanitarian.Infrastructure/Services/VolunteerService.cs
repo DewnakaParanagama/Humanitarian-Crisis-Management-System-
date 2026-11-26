@@ -139,17 +139,34 @@ public class VolunteerService : IVolunteerService
     }
 
     // Get all volunteers
-    public async Task<IReadOnlyList<VolunteerResponseDto>>
-        GetAllVolunteersAsync(CancellationToken cancellationToken)
-    {
-        var volunteers = await _context.VolunteerProfiles
-            .AsNoTracking()
-            .Include(profile => profile.User)
-            .OrderBy(profile => profile.CreatedAtUtc)
-            .ToListAsync(cancellationToken);
+   public async Task<IReadOnlyList<VolunteerResponseDto>>
+    GetAllVolunteersAsync(
+        bool activeOnly,
+        CancellationToken cancellationToken)
+{
+    var query = _context.VolunteerProfiles
+        .AsNoTracking()
+        .Include(profile => profile.User)
+        .AsQueryable();
 
-        return volunteers.Select(MapToResponse).ToList();
+    if (activeOnly)
+    {
+        query = query.Where(profile =>
+            profile.User != null &&
+            profile.User.Role == UserRole.Volunteer &&
+            profile.User.Status == UserStatus.Active &&
+            (profile.VerificationStatus ==
+                VolunteerVerificationStatus.Verified ||
+             profile.VerificationStatus ==
+                VolunteerVerificationStatus.Active));
     }
+
+    var volunteers = await query
+        .OrderBy(profile => profile.CreatedAtUtc)
+        .ToListAsync(cancellationToken);
+
+    return volunteers.Select(MapToResponse).ToList();
+}
 
     // Update volunteer verification status
     public async Task<VolunteerResponseDto> UpdateVolunteerStatusAsync(

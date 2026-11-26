@@ -67,16 +67,19 @@ public class VolunteersController : ControllerBase
     }
 
     // Coordinator and Admin view all volunteers
-    [Authorize(Roles = "Coordinator,Admin")]
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<VolunteerResponseDto>>> GetAllVolunteers(
-        CancellationToken cancellationToken)
-    {
-        var volunteers = await _volunteerService.GetAllVolunteersAsync(
-            cancellationToken);
+    // Coordinator and Admin view volunteers
+[Authorize(Roles = "Coordinator,Admin")]
+[HttpGet]
+public async Task<ActionResult<IReadOnlyList<VolunteerResponseDto>>> GetAllVolunteers(
+    [FromQuery] bool activeOnly = false,
+    CancellationToken cancellationToken = default)
+{
+    var volunteers = await _volunteerService.GetAllVolunteersAsync(
+        activeOnly,
+        cancellationToken);
 
-        return Ok(volunteers);
-    }
+    return Ok(volunteers);
+}
 
     // Admin updates volunteer verification status
     [Authorize(Roles = "Admin")]
